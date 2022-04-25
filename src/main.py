@@ -1,6 +1,7 @@
+import res.globals as glob
 import readline
 import json
-
+import os
 
 # Merhabaaa...
 # sınav senemdeyim ve sınava yaklaşık 55 gün kaldı
@@ -42,16 +43,40 @@ import json
 
 
 
+def read_database(path):
+	
 
 
-def _help(): return "ok"
+
+def _help():
+	for key, value in glob.keywords_help.items():
+		print(f"[{key}]: {value}")
+	return True
+
+def _reconfigure(): return True
+
+def _fetch(): return True
+
+def _list(): return True
+
+def _add_data(): return True
+
+def _add_subject(): return True
+
+def _remove_data(): return True
+
+def _remove_subject(): return True
+
+def check_input(text, keywords):
+	for keyword in keywords:
+		text = text.replace(keyword, "")
+	return not bool(len(text.strip()))
 
 def parser(text):
-	
-	try:
-		print(exec("_" + text.strip().replace(" ", "_")))
-	except:
-		print("fuck")
+	if check_input(text, glob.keywords):
+		text = " ".join([i for i in text.split(" ") if i != ""]).strip().replace(" ", "_")
+		return eval(f"_{text}()")
+	return f"No keyword found: {text}"
 
 def completer(text, state):
 	words = readline.get_line_buffer().split(" ")
@@ -70,7 +95,7 @@ def completer(text, state):
 def _main():
 	readline.parse_and_bind("tab: complete")
 	readline.set_completer(completer)
-	parser(input(">>> "))
+	print(parser(input(">>> ")))
 
 
 
