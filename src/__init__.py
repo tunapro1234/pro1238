@@ -1,1 +1,1 @@
-from src.main import _main
+from src.main import *

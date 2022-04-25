@@ -1,4 +1,5 @@
 import res.globals as glob
+import src.database as db
 import readline
 
 # Merhabaaa...
@@ -22,6 +23,7 @@ import readline
 # keyword belirlemeliyim
 #	reconfigure
 #	fetch
+#	init
 #	help
 #
 #	list 
@@ -52,7 +54,14 @@ def _reconfigure(): return True
 
 def _fetch(): return True
 
-def _list(): return True
+def _init(): return db.write_database()
+
+
+def _list_subject(): return True
+
+def _list_folder(): return db.read_database()
+
+def _list_data(): return True
 
 
 def _add_subject(): return True
@@ -85,7 +94,7 @@ def completer(text, state):
 	vocab = []
 
 	if len(words) == 1:
-		vocab = ["help", "reconfigure", "fetch", "list", "add", "remove"]
+		vocab = ["help", "reconfigure", "fetch", "init", "list", "add", "remove"]
 
 	elif len(words) == 2 and words[0] in ["list", "add", "remove"]:
 		vocab = ["subject", "folder", "data"]

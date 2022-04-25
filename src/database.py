@@ -1,5 +1,6 @@
 from res.globals import __version__ as _ver
 import json
+import os
 
 # şimdi 
 # hmm
@@ -13,13 +14,13 @@ class Folder:
 		self.version = version
 		self.name = name
 
-		self.sub_elements = elements
+		self.sub_elements = sub_elements
 
 	def __dict__(self):
 		return {
 				"version": self.version,
 				"name": self.name,
-				"sub_elements": [element.name + ".json" for element in self.subjects]
+				"sub_elements": [element.name + ".json" for element in self.sub_elements]
 				}
 
 class Subject:
@@ -40,32 +41,30 @@ class Subject:
 				"data": self.data
 				}
 
-default_structure = Folder("data", _ver, 
-							Folder("tyt", _ver,
-								Subject("tr", _ver, 34.5, 1.4, {}),
-								Subject("mat", _ver, 34.5, 1.4, {}))
-							Folder("ayt", _ver,
-								Subject("mat", _ver, 38, 3, {}))
-							)
+# default_structure = Folder("data", _ver, [ 
+# 							Folder("tyt", _ver, [ Subject("tr", _ver, 34.5, 1.4, {}), Subject("mat", _ver, 34.5, 1.4, {}) ])
+# 							Folder("ayt", _ver, [ Subject("mat", _ver, 38, 3, {})
+# 								])
+# 							])
 
+default_structure = Folder("data", _ver, [Subject("mat", _ver, 0, 0, {})])
+default_path = "res/data"
 
-
-
-def read_database(path: str):
-	if os.path.is_dir(path):
-		with open(path + "properties.json") as file:
-			read = json.loads(file)
+def read_database(path: str = default_path):
+	if os.path.isdir(path):
+		with open(os.path.join(path, "properties.json")) as file:
+			read = json.load(file)
 		
-		sub_elements = [read_database(os.path.join(path, element)) for element in read.sub_elements]
-		main_folder = Folder(read.name, read.version, sub_elements)
+		sub_elements = [read_database(os.path.join(path, element)) for element in read["sub_elements"]]
+		main_folder = Folder(read["name"], read["version"], sub_elements)
 		return main_folder
 
-	elif os.path.is_file(path):
+	elif os.path.isfile(path):
 		with open(path) as file:
 			read = json.load(file)
 		return Subject(**read)
 
-def write_database(path: str, structure: Folder = default_structure):
+def write_database(path: str = default_path, structure: Folder = default_structure):
 	if not os.path.exists(path): return False
 	
 	with open(os.path.join(path, "properties.json"), "w+") as file:
@@ -77,9 +76,9 @@ def write_database(path: str, structure: Folder = default_structure):
 			write_database(os.path.join(path, element.name), element)
 
 		elif type(element) == Subject:
-			with open(os.path.join(path, element.name), "w+") as file:
+			with open(os.path.join(path, element.name + ".json"), "w+") as file:
 				json.dump(element.__dict__(), file)
-
+	return True
 
 
 
