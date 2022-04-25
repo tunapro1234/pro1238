@@ -1,7 +1,5 @@
 import res.globals as glob
 import readline
-import json
-import os
 
 # Merhabaaa...
 # sınav senemdeyim ve sınava yaklaşık 55 gün kaldı
@@ -28,10 +26,12 @@ import os
 #
 #	list 
 #		subject
+#		folder
 #		data
 # 
 #	add 
 #		subject
+#		folder
 #		data
 #
 #	remove
@@ -40,11 +40,6 @@ import os
 #
 # şimdilik bu keywordler yeterli
 #
-
-
-
-def read_database(path):
-	
 
 
 
@@ -59,13 +54,20 @@ def _fetch(): return True
 
 def _list(): return True
 
-def _add_data(): return True
 
 def _add_subject(): return True
 
-def _remove_data(): return True
+def _add_subject(): return True
+
+def _add_data(): return True
+
 
 def _remove_subject(): return True
+
+def _remove_subject(): return True
+
+def _remove_data(): return True
+
 
 def check_input(text, keywords):
 	for keyword in keywords:
@@ -86,7 +88,7 @@ def completer(text, state):
 		vocab = ["help", "reconfigure", "fetch", "list", "add", "remove"]
 
 	elif len(words) == 2 and words[0] in ["list", "add", "remove"]:
-		vocab = ["subject", "data"]
+		vocab = ["subject", "folder", "data"]
 		
 	results = [i for i in vocab if i.startswith(text)] + [None]
 	return results[state]
