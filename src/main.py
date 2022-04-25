@@ -1,4 +1,6 @@
+import readline
 import json
+
 
 """
 Merhabaaa...
@@ -20,14 +22,34 @@ dosya ayrımı ders bazında yapılacak her bir ders json dosyasının içinde d
 bazında sıralama yapılacak.
 
 keyword bellirlemeliyim
+    reconfigure
+    add 
+        data
+
+    remove
+        data
+
+
+
 
 
 """
 
 
 def parser():
-    pass
+    readline.set_completer(completer_generator("tuna", "pro", "test"))
+    input(">>> ")
+    readline.set_completer(completer_generator("deneme", "aaaaaa", "foho"))
+    input(">>> ")
+    
 
+def completer_generator(*args):
+    def complete(text, state):
+        results = [i for i in args if i.startswith(text)] + [None]     
+        return results[state]
+    return complete 
+    
+    
 def _main():
-    print("Sanity Check.")
-
+    readline.parse_and_bind("tab: complete")
+    parser()
