@@ -43,7 +43,11 @@ import readline
 # şimdilik bu keywordler yeterli
 #
 
-
+# 
+# TODO
+# write_database ve read_database fonksiyonlarına exception handling geliştirmeleri
+# keywordlerin baştan ayarlanması
+# empty string error
 
 def _help():
 	for key, value in glob.keywords_help.items():

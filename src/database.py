@@ -20,7 +20,7 @@ class Folder:
 		return {
 				"version": self.version,
 				"name": self.name,
-				"sub_elements": [element.name + ".json" for element in self.sub_elements]
+				"sub_elements": [(element.name if type(element) == Folder else element.name + ".json") for element in self.sub_elements]
 				}
 
 class Subject:
@@ -41,13 +41,11 @@ class Subject:
 				"data": self.data
 				}
 
-# default_structure = Folder("data", _ver, [ 
-# 							Folder("tyt", _ver, [ Subject("tr", _ver, 34.5, 1.4, {}), Subject("mat", _ver, 34.5, 1.4, {}) ])
-# 							Folder("ayt", _ver, [ Subject("mat", _ver, 38, 3, {})
-# 								])
-# 							])
+tyt = Folder("tyt", _ver, [Subject("tr", _ver, 0, 0, {})])
+ayt = Folder("ayt", _ver, [Subject("mat", _ver, 0, 0, {})])
+default_structure = Folder("data", _ver, [tyt, ayt])
 
-default_structure = Folder("data", _ver, [Subject("mat", _ver, 0, 0, {})])
+# default_structure = Folder("data", _ver, [Subject("mat", _ver, 0, 0, {})])
 default_path = "res/data"
 
 def read_database(path: str = default_path):
