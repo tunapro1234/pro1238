@@ -47,7 +47,6 @@ import readline
 # TODO
 # write_database ve read_database fonksiyonlarına exception handling geliştirmeleri
 # keywordlerin baştan ayarlanması
-# empty string error
 
 def _help():
 	for key, value in glob.keywords_help.items():
@@ -83,6 +82,7 @@ def _remove_data(): return True
 
 
 def check_input(text, keywords):
+	if text == "": return False
 	for keyword in keywords:
 		text = text.replace(keyword, "")
 	return not bool(len(text.strip()))
@@ -110,8 +110,9 @@ def completer(text, state):
 def _main():
 	readline.parse_and_bind("tab: complete")
 	readline.set_completer(completer)
-	print(parser(input(">>> ")))
 
+	try: print(parser(input(">>> ")))
+	except KeyboardInterrupt: print()
 
 
 

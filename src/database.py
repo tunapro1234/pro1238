@@ -41,9 +41,15 @@ class Subject:
 				"data": self.data
 				}
 
-tyt = Folder("tyt", _ver, [Subject("tr", _ver, 0, 0, {})])
-ayt = Folder("ayt", _ver, [Subject("mat", _ver, 0, 0, {})])
-default_structure = Folder("data", _ver, [tyt, ayt])
+default_structure = Folder("data", _ver, [
+							Folder("tyt", _ver, [
+								Subject("tr", _ver, 0, 0, {})
+								]), 
+
+							Folder("ayt", _ver, [
+								Subject("mat", _ver, 0, 0, {})
+								])
+							])
 
 # default_structure = Folder("data", _ver, [Subject("mat", _ver, 0, 0, {})])
 default_path = "res/data"
