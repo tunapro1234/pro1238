@@ -54,8 +54,8 @@ class Folder:
 	def write(self, path):
 		path = Path(path) if type(path) == str else path
 		if not path.parent.exists(): return False
-		if not path.exists(): os.mkdir(path)
 		try:
+			if not path.exists(): os.mkdir(path)
 			with Path(path, "properties.json").open("w+") as file:
 				json.dump(self.__dict__(), file)
 		except:
@@ -63,17 +63,22 @@ class Folder:
 		return True
 
 	@classmethod
-	def read(cls, path: str):
+	def read(cls, path):
 		path = Path(path) if type(path) == str else path
 		if not path.exists(): return False
 
-		with Path(path, "properties.json").open() as file:
-			read = json.load(file)
+		try:
+			with Path(path, "properties.json").open() as file:
+				read = json.load(file)
+		except: return False
 
 		# sub_elementsı oku ve subject/folder objesine çevir
-		read["sub_elements"] = [(Subject if element_name.endswith(".json") else Folder).read(Path(path, element_name)) for element_name in read["sub_elements"]]
+		read["sub_elements"] = [(Subject if element_name.endswith(".json") else \
+			Folder).read(Path(path, element_name)) for element_name in read["sub_elements"]]
+		# eğer hata varsa yukarı aktar
+		if False in read["sub_elements"]: return False
 		# data listesini oku ve entry objesine çevir
-		read["data"] = Entry.convert_slte(read["data"])
+		read["data"] = Entry.convert_sltel(read["data"])
 		return Folder(**read)
 
 	def add_entry(*args, **kwargs):
@@ -101,14 +106,16 @@ class Subject:
 				}
 
 	@classmethod
-	def read(cls, path: str):
+	def read(cls, path):
 		path = Path(path) if type(path) == str else path
 		if not path.exists(): return False
 		
-		with path.open() as file:
-			read = json.load(file)
+		try:
+			with path.open() as file:
+				read = json.load(file)
+		except: return False
 		# sub_elementsı oku ve subject/folder objesine çevir
-		read["data"] = Entry.convert_slte(read["data"])
+		read["data"] = Entry.convert_sltel(read["data"])
 		return Subject(**read)
 
 	def write(self, path):
@@ -147,7 +154,7 @@ class Entry:
 		
 	# str list to entry list
 	@classmethod
-	def convert_slte(cls, str_list):
+	def convert_sltel(cls, str_list):
 		return [Entry(**entry) for entry in str_list]
 
 
@@ -171,36 +178,14 @@ def add_entry(self, date = None, *args, **kwargs):
 	self.data.append(Entry(date, self.name, *args, **kwargs))
 	return date
 
+def read_database(path = default_path):
+	return Folder.read(path)
 
-def check_properties(path, _type):
-	return os.path.exists(os.path.join(path, "properties.json"))	# BURAYI GELİŞTİR
-
-def is_db_folder(path):
-	return os.isdir(path) and \
-			check_properties(path, Folder)
-			
-def find_databases(path):
-	return [name for name in os.listdir(path) if is_db_folder(os.path.join(path, name))]
-
-# def read_database(path: str = os.path.join(default_path, "data")):
-#	if not os.path.exists(path): return None
-# 
-#	if os.path.isdir(path):
-#		with open(os.path.join(path, "properties.json")) as file:
-#			read = json.load(file)
-#		
-#		# sub_elementsı oku ve subject/folder objesine çevir
-#		read["sub_elements"] = [read_database(os.path.join(path, element)) for element in read["sub_elements"]]
-#		# data listesini oku ve entry objesine çevir
-#		read["data"] = Entry.convert_slte(read["data"])
-#		return Folder(**read)
-# 
-#	elif os.path.isfile(path): return Subject.read(path) 
-
-def write_database(main_folder: Folder = default_structure, path: str = default_path):
+def write_database(main_folder: Folder = default_structure, path = default_path):
 	if not os.path.exists(Path(path).parent): return False
 	if not main_folder.write(path): return False
-	
+	# classmethod olan folder read recursive okuyor ama recursive yazmıyor
+	# o yüzden bu fonksiyona ihtiyacımız var ama read_database çok da gerekli değil
 	for element in main_folder.sub_elements:
 		if type(element) == Folder:
 			if not write_database(element, Path(path, element.name)): return False
@@ -209,26 +194,15 @@ def write_database(main_folder: Folder = default_structure, path: str = default_
 		else: return False
 	return True
 
-# def write_database(structure: Folder = default_structure, path: str = default_path):
-#	# if not os.path.exists(path): return False
-#	
-#	with open(os.path.join(path, "properties.json"), "w+") as file:
-#		json.dump(structure.__dict__(), file)
-#	
-#	for element in structure.sub_elements:
-#		element_path = os.path.join(path, element.name)
-#		if type(element) == Folder:
-#			if not os.path.exists(element_path):
-#				os.mkdir(element_path)
-#			write_database(element_path, element)
+# def check_properties(path, _type):
+# 	return os.path.exists(os.path.join(path, "properties.json"))	# BURAYI GELİŞTİR
 # 
-#		elif type(element) == Subject:
-#			with open(element_path + ".json", "w+") as file:
-#				json.dump(element.__dict__(), file)
-#	return True
-
-
-
+# def is_db_folder(path):
+# 	return os.isdir(path) and \
+# 			check_properties(path, Folder)
+# 			
+# def find_databases(path):
+# 	return [name for name in os.listdir(path) if is_db_folder(os.path.join(path, name))]
 
 
 

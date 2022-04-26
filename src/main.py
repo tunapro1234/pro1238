@@ -44,11 +44,12 @@ import readline
 
 
  
+#	write_database ve read_database fonksiyonlarına 
+# 	exception handling geliştirmeleri
+# 	(çoğunlukla tamam)
+#
 # TODO
-# posix path kullan
-# write_database ve read_database fonksiyonlarına exception handling geliştirmeleri
 # keywordlerin baştan ayarlanması
-# write_database fonksiyonunu classlara aktar
 # _add_entry fonksiyonları
 # excel export
 
