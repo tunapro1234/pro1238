@@ -47,6 +47,9 @@ import readline
 # TODO
 # write_database ve read_database fonksiyonlarına exception handling geliştirmeleri
 # keywordlerin baştan ayarlanması
+# id_generator
+# date sistemi
+# excel export
 
 def _help():
 	for key, value in glob.keywords_help.items():
