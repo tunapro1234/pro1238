@@ -41,15 +41,18 @@ import readline
 #		data
 #
 # şimdilik bu keywordler yeterli
-#
 
-# 
+
+ 
 # TODO
+# posix path kullan
 # write_database ve read_database fonksiyonlarına exception handling geliştirmeleri
 # keywordlerin baştan ayarlanması
-# id_generator
-# date sistemi
+# write_database fonksiyonunu classlara aktar
+# _add_entry fonksiyonları
 # excel export
+
+
 
 def _help():
 	for key, value in glob.keywords_help.items():
@@ -65,7 +68,7 @@ def _init(): return db.write_database()
 
 def _list_subject(): return True
 
-def _list_folder(): return db.read_database()
+def _list_folder(): return db.Folder.read(db.default_path)
 
 def _list_data(): return True
 
