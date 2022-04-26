@@ -10,21 +10,25 @@ import os
 # 
 
 class Folder:
-	def __init__(self, name: str, version: str, sub_elements: list):
+	def __init__(self, name: str, version: str, sub_elements: list, data: list):
 		self.version = version
 		self.name = name
 
 		self.sub_elements = sub_elements
+		self.data = data
 
 	def __dict__(self):
 		return {
 				"version": self.version,
 				"name": self.name,
-				"sub_elements": [(element.name if type(element) == Folder else element.name + ".json") for element in self.sub_elements]
+				"sub_elements": [(element.name if type(element) == Folder 
+									else element.name + ".json")
+									for element in self.sub_elements],
+				"data": [entry.__dict__() for entry in self.data] 
 				}
 
 class Subject:
-	def __init__(self, name: str, version: str, target: float, factor: float, data: dict):
+	def __init__(self, name: str, version: str, target: float, factor: float, data: list):
 		self.version = version
 		self.name = name
 
@@ -38,8 +42,23 @@ class Subject:
 				"name": self.name,
 				"target": self.target,
 				"factor": self.factor,
-				"data": self.data
+				"data": [entry.__dict__() for entry in self.data] 
 				}
+
+class Entry:
+	def __init__(self, _id, subject, date, correct, wrong):
+		self._id = _id
+		self.date = date
+		self.subject = subject
+	
+	def __dict__(self):
+		return {
+				"_id": self._id,
+				"date": self.date, # BURAYA DÜZENLEME LAZIM
+				"correct": self.correct,
+				"wrong": self.wrong
+				}
+				
 
 default_structure = Folder("data", _ver, [
 							Folder("tyt", _ver, [
