@@ -25,8 +25,8 @@ import os
 # çok sağlıklı olmaz sanırım
 #
 # okey subjectin writeı klasör alıyor klasörün writeı klasör isimli alıyor
-# bu biraz sinir bozucu bir davranış bunu değiiştirelim
-# ikisi de kendi ismini de alsı
+# bu biraz sinir bozucu bir davranış bunu değiştirelim
+# ikisi de kendi ismini de alsın
 #
 # folderın read fonksyonu recursive ve altındaki her şeyi okuyor
 # ama write fonksiyonu recursive değil
@@ -34,17 +34,19 @@ import os
 
 
 class Folder:
-	def __init__(self, name: str, version: str, sub_elements: list, data: list = []):
+	def __init__(self, name: str, version: str, sub_elements: list, comment: str = "", data: list = []):
 		self.version = version
 		self.name = name
 
 		self.sub_elements = sub_elements
+		self.comment = comment
 		self.data = data
 
 	def __dict__(self):
 		return {
 				"version": self.version,
 				"name": self.name,
+				"comment": self.comment,
 				"sub_elements": [(element.name if type(element) == Folder 
 									else element.name + ".json")
 									for element in self.sub_elements],
@@ -86,13 +88,15 @@ class Folder:
 
 
 class Subject:
-	def __init__(self, name: str, full_name: str, version: str, target: float, factor: float, data: list = []):
+	def __init__(self, name: str, full_name: str, version: str, 
+			factor: float, target: float = 0, comment: str = "", data: list = []):
 		self.version = version
 		self.name = name
 		self.full_name = full_name
 
-		self.target = target
+		self.comment = comment
 		self.factor = factor
+		self.target = target
 		self.data = data
 
 	def __dict__(self):
@@ -100,8 +104,9 @@ class Subject:
 				"version": self.version,
 				"name": self.name,
 				"full_name": self.full_name, 
-				"target": self.target,
 				"factor": self.factor,
+				"target": self.target,
+				"comment": self.comment,
 				"data": [entry.__dict__() for entry in self.data] 
 				}
 
@@ -152,8 +157,8 @@ class Entry:
 				"comment": self.comment
 				}
 		
-	# str list to entry list
 	@classmethod
+	# str list to entry list
 	def convert_sltel(cls, str_list):
 		return [Entry(**entry) for entry in str_list]
 
@@ -164,11 +169,28 @@ date_format = "%d/%m/%y %H:%M:%S.%f"
 default_path = Path("res/data")
 default_structure = Folder("data", _ver, [
 							Folder("tyt", _ver, [
-								Subject("tr", "tyt türkçe", _ver, 0, 0)
+								Subject("tr", "tyt türkçe", _ver, 0),
+								Subject("mat", "tyt matematik", _ver, 0),
+								Folder("sos", _ver, [
+									Subject("tarih", "tyt tarih", _ver, 0),
+									Subject("coğrafya", "tyt coğrafya", _ver, 0),
+									Subject("felsefe", "tyt felsefe", _ver, 0),
+									Subject("din", "tyt din", _ver, 0)
+									]),
+								Folder("fen", _ver, [
+									Subject("fizik", "tyt fizik", _ver, 0),
+									Subject("kimya", "tyt kimya", _ver, 0),
+									Subject("bio", "tyt biyoloji", _ver, 0)
+									])
 								]), 
 
 							Folder("ayt", _ver, [
-								Subject("mat", "ayt matematik", _ver, 0, 0)
+								Subject("mat", "ayt matematik", _ver, 0),
+								Folder("fen", _ver, [
+									Subject("fizik", "ayt fizik", _ver, 0),
+									Subject("kimya", "ayt kimya", _ver, 0),
+									Subject("bio", "ayt biyoloji", _ver, 0)
+									])
 								])
 							])
 
