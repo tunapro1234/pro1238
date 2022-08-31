@@ -42,6 +42,7 @@ class Folder:
 		self.comment = comment
 		self.data = data
 
+
 	def __dict__(self):
 		return {
 				"version": self.version,
@@ -53,16 +54,6 @@ class Folder:
 				"data": [entry.__dict__() for entry in self.data] 
 				}
 
-	def write(self, path):
-		path = Path(path) if type(path) == str else path
-		if not path.parent.exists(): return False
-		try:
-			if not path.exists(): os.mkdir(path)
-			with Path(path, "properties.json").open("w+") as file:
-				json.dump(self.__dict__(), file)
-		except:
-			return False
-		return True
 
 	@classmethod
 	def read(cls, path):
@@ -80,11 +71,60 @@ class Folder:
 		# eğer hata varsa yukarı aktar
 		if False in read["sub_elements"]: return False
 		# data listesini oku ve entry objesine çevir
-		read["data"] = Entry.convert_sltel(read["data"])
+		read["data"] = Entry.undict(read["data"])
 		return Folder(**read)
+
+
+	def write_self(self, path):
+		path = Path(path) if type(path) == str else path
+		if not path.parent.exists(): return False
+		try:
+			if not path.exists(): os.mkdir(path)
+			with Path(path, "properties.json").open("w+") as file:
+				json.dump(self.__dict__(), file)
+		except:
+			return False
+		return True
+
+
+	def write(self, path):
+		if not os.path.exists(Path(path).parent): return False
+		if not self.write_self(path): return False
+		# classmethod olan folder read recursive okuyor ama recursive yazmıyor
+		# o yüzden bu fonksiyona ihtiyacımız var ama read_all çok da gerekli değil
+		for element in self.sub_elements:
+			if type(element) == Subject: 
+				element.name += ".json"
+			if not element.write(Path(path, element.name)): 
+				return False
+		return True
+
+
+	def list_all(self):
+		return {
+				"version": self.version,
+				"name": self.name,
+				"comment": self.comment,
+				"sub_elements": [element.__dict__() for element in self.sub_elements],
+				"data": [entry.__dict__() for entry in self.data] 
+				}
+
+
+	def list_subjects(self):
+		return {self.name: [(element.list_subjects() if type(element) == Folder \
+			else element.__dict__()) for element in self.sub_elements]}
+
+
+	def list_names_r(self):
+		return [(element.list_names_r() if type(element) == Folder \
+			else element.name) for element in self.sub_elements]
+
+	def find_by_name(self, name):
+		return [i for i in self.sub_elements if i.name == name][0]
 
 	def add_entry(*args, **kwargs):
 		return add_entry(*args, **kwargs)
+
 
 
 class Subject:
@@ -99,6 +139,7 @@ class Subject:
 		self.target = target
 		self.data = data
 
+
 	def __dict__(self):
 		return {
 				"version": self.version,
@@ -110,6 +151,7 @@ class Subject:
 				"data": [entry.__dict__() for entry in self.data] 
 				}
 
+
 	@classmethod
 	def read(cls, path):
 		path = Path(path) if type(path) == str else path
@@ -120,8 +162,9 @@ class Subject:
 				read = json.load(file)
 		except: return False
 		# sub_elementsı oku ve subject/folder objesine çevir
-		read["data"] = Entry.convert_sltel(read["data"])
+		read["data"] = Entry.undict(read["data"])
 		return Subject(**read)
+
 
 	def write(self, path):
 		path = Path(path) if type(path) == str else path
@@ -135,8 +178,13 @@ class Subject:
 		return True
 				
 
+	def list_all(self):
+		return self.__dict__()
+
+
 	def add_entry(*args, **kwargs):
 		return add_entry(*args, **kwargs)
+
 
 
 class Entry:
@@ -148,6 +196,7 @@ class Entry:
 		self.wrong = wrong
 		self.comment = comment
 	
+
 	def __dict__(self):
 		return {
 				"date": self.date.strftime(date_format),
@@ -157,9 +206,10 @@ class Entry:
 				"comment": self.comment
 				}
 		
+
 	@classmethod
 	# str list to entry list
-	def convert_sltel(cls, str_list):
+	def undict(cls, str_list):
 		return [Entry(**entry) for entry in str_list]
 
 
@@ -167,62 +217,58 @@ class Entry:
 date_format = "%d/%m/%y %H:%M:%S.%f"
 
 default_path = Path("res/data")
-default_structure = Folder("data", _ver, [
-							Folder("tyt", _ver, [
-								Subject("tr", "tyt türkçe", _ver, 0),
-								Subject("mat", "tyt matematik", _ver, 0),
-								Folder("sos", _ver, [
-									Subject("tarih", "tyt tarih", _ver, 0),
-									Subject("coğrafya", "tyt coğrafya", _ver, 0),
-									Subject("felsefe", "tyt felsefe", _ver, 0),
-									Subject("din", "tyt din", _ver, 0)
-									]),
-								Folder("fen", _ver, [
-									Subject("fizik", "tyt fizik", _ver, 0),
-									Subject("kimya", "tyt kimya", _ver, 0),
-									Subject("bio", "tyt biyoloji", _ver, 0)
-									])
-								]), 
+default_structure = \
+		Folder("data", _ver, [
+			Folder("tyt", _ver, [
+				Subject("tr", "tyt türkçe", _ver, 0),
+				Subject("mat", "tyt matematik", _ver, 0),
+				Folder("sos", _ver, [
+					Subject("tarih", "tyt tarih", _ver, 0),
+					Subject("coğrafya", "tyt coğrafya", _ver, 0),
+					Subject("felsefe", "tyt felsefe", _ver, 0),
+					Subject("din", "tyt din", _ver, 0)
+					]),
+				Folder("fen", _ver, [
+					Subject("fizik", "tyt fizik", _ver, 0),
+					Subject("kimya", "tyt kimya", _ver, 0),
+					Subject("bio", "tyt biyoloji", _ver, 0)
+					])
+				]), 
 
-							Folder("ayt", _ver, [
-								Subject("mat", "ayt matematik", _ver, 0),
-								Folder("fen", _ver, [
-									Subject("fizik", "ayt fizik", _ver, 0),
-									Subject("kimya", "ayt kimya", _ver, 0),
-									Subject("bio", "ayt biyoloji", _ver, 0)
-									])
-								])
-							])
+			Folder("ayt", _ver, [
+				Subject("mat", "ayt matematik", _ver, 0),
+				Folder("fen", _ver, [
+					Subject("fizik", "ayt fizik", _ver, 0),
+					Subject("kimya", "ayt kimya", _ver, 0),
+					Subject("bio", "ayt biyoloji", _ver, 0)
+					])
+				])
+			])
 
 
-def add_entry(self, date = None, *args, **kwargs):
+def add_entry(self, path, date = None, *args, **kwargs):
 	date = datetime.datetime.now() if date is None else date
 	self.data.append(Entry(date, self.name, *args, **kwargs))
+	if not self.write(): return False
 	return date
+
 
 def read_database(path = default_path):
 	return Folder.read(path)
 
+
 def write_database(main_folder: Folder = default_structure, path = default_path):
-	if not os.path.exists(Path(path).parent): return False
-	if not main_folder.write(path): return False
-	# classmethod olan folder read recursive okuyor ama recursive yazmıyor
-	# o yüzden bu fonksiyona ihtiyacımız var ama read_database çok da gerekli değil
-	for element in main_folder.sub_elements:
-		if type(element) == Folder:
-			if not write_database(element, Path(path, element.name)): return False
-		elif type(element) == Subject:
-			if not element.write(Path(path, element.name + ".json")): return False
-		else: return False
-	return True
+	return main_folder.write(path)
 
 # def check_properties(path, _type):
 # 	return os.path.exists(os.path.join(path, "properties.json"))	# BURAYI GELİŞTİR
-# 
+
+
 # def is_db_folder(path):
 # 	return os.isdir(path) and \
 # 			check_properties(path, Folder)
-# 			
+ 			
+
 # def find_databases(path):
 # 	return [name for name in os.listdir(path) if is_db_folder(os.path.join(path, name))]
 
