@@ -1,9 +1,11 @@
-from res.globals import __version__ as _ver
 from pathlib import Path
 import datetime
 import json
 import pdb
 import os
+
+
+_ver = "0.0.0"
 
 # şimdi 
 # hmm

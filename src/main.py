@@ -1,6 +1,7 @@
 import res.globals as glb
 import src.database as ldb
 import readline
+import os
 
 # Merhabaaa...
 # sınav senemdeyim ve sınava yaklaşık 55 gün kaldı
@@ -45,13 +46,14 @@ import readline
 
  
 #	write_database ve read_database fonksiyonlarına 
-# 	exception handling geliştirmeleri
-# 	(çoğunlukla tamam)
+#	exception handling geliştirmeleri
+#	(çoğunlukla tamam)
 #
 #	_add_entry fonksiyonları
 #
 #
 # TODO
+# var olan database i yok edecek her fonksiyona check konulmalı
 # ls -l
 # folder bold
 # cd 
@@ -63,19 +65,29 @@ import readline
 
 
 
-def _help(db, selected):
+def _help(db, selected, *args, **kwargs):
 	for key, value in glb.keywords_help.items():
 		print(f"[{key}]: {value}")
 	return True
 
-def _reconfigure(db, selected): 
+def _reconfigure(db, selected, *args, **kwargs): 
 	raise NotImplemented
 
-def _init(db, selected): 
-	return db, selected, ldb.write_database()
+def _init(db, selected, *args, **kwargs): 
+	if (rv := ldb.write_database()) == True:
+		print("Database created successfully.")
+	return db, selected, rv
 
 
-def ls_recursive(target: ldb.Folder, tab="  "):
+def _pwd(db, selected, *args, **kwargs):
+	raise NotImplemented
+
+
+def _cd(db, selected, arguments, d_arguments):
+	raise NotImplemented
+
+
+def ls_recursive(target: ldb.Folder, tab="	"):
 	# belirli bşr klasör altındaki tüm klasörleri görmemizi sağlıyor
 	# öncelikle bulunduğumuz klasörün ismi
 	output = colorize_element(target) + "\n"
@@ -133,33 +145,49 @@ def _ls(db, selected=None, arguments=None, d_arguments=None):
 		# elemanları okuyup renklendir
 		output = [colorize_element(e) for e in selected.sub_elements]
 		# eğer liste halinde isteniyorsa alt alta sırala
-		if "l" in d_arguments: outputs = "\n".join(output)
+		if "l" in d_arguments: output = "\n".join(output)
 		# liste değilse boşluk yeterli
 		else: output = " ".join(output)
 		# yapıştır gitsin
 		print(output)
-	
 	return db, selected, True
 
-
-def _add_subject(db, selected):
-	raise NotImplemented
-
-def _add_folder(db, selected):
-	raise NotImplemented
-
-def _add_data(db, selected):
+def _le(db, selected, arguments, d_arguments):
 	raise NotImplemented
 
 
-def _rm_subject(db, selected):
+def _rm(db, selected, arguments, d_arguments):
 	raise NotImplemented
 
-def _rm_folder(db, selected):
+def _re(db, selected, arguments, d_arguments):
 	raise NotImplemented
 
-def _rm_data(db, selected):
+
+def _add_folder(*args, **kwargs):
+	return _mkdir(*args, **kwargs)
+
+def _mkdir(db, selected, arguments, d_arguments):
 	raise NotImplemented
+
+
+def _add_subject(*args, **kwargs):
+	return _mksub(*args, **kwargs)
+
+def _mksub(db, selected):
+	raise NotImplemented
+
+
+def _add_entry(*args, **kwargs):
+	return _mkent(*args, **kwargs)
+
+def _mkent(db, selected):
+	raise NotImplemented
+
+
+def _clear(db, selected, *args, **kwargs):
+	os.system("clear")
+	return db, selected, True
+
 
 
 def check_input(text, keywords, selected):
@@ -174,6 +202,7 @@ def check_input(text, keywords, selected):
 	# eğer fonksiyona gönderilmeye çalışılan bir argümansa onu da çıkar
 	text = " ".join([i for i in text.split(" ") if not i.startswith("-")])
 	return not bool(len(text.strip()))
+
 
 def parser(input_text, database, selected_element=None):
 	selected_element = database if selected_element is None else selected_element
@@ -197,7 +226,7 @@ def parser(input_text, database, selected_element=None):
 				d_arguments += i[1:]
 			# eğer kelime seçili olan klasörün altındaki 
 			# bir eleman ismine eşitse argumentsa ekle
-			elif i in [j.name for j in selected_element.sub_elements]: 
+			elif i in selected_element.list_sub_names(): 
 				arguments.append(i)
 			# hiçbiri değilse fonksyion ismine ekle
 			else: 
@@ -214,31 +243,60 @@ def parser(input_text, database, selected_element=None):
 			
 	return database, selected_element, f"Error parsing: {input_text}"
 
-def completer(text, state):
-	words = readline.get_line_buffer().split(" ")
-	vocab = []
 
-	if len(words) == 1:
-		vocab = glb.commands
+def complete_path(db, selected, word):
+	if selected is None or db is None: return []
+	base = db if word.startswith("/") else selected
 
-	elif len(words) == 2 and words[0] in ["add", "remove"]:
-		vocab = ["subject", "folder", "data"]
+	names = [i for i in word.split("/") if i != ""]
+	names = names if word.endswith("/") else names[:-1]
+	nbase = base
+	for name in names:
+		nbase = nbase.find_by_name(name)
+
+	beg = "/".join(word.split("/")[:-1])
+	beg = beg if beg == "" else beg + "/"
+	return [beg + e for e in nbase.list_sub_names()]
 		
-	results = [i for i in vocab if i.startswith(text)] + [None]
-	return results[state]
+
+def completer_wrapper(db, selected):
+	selected = db if selected is None else selected
+
+	def completer(text, state):
+		words = readline.get_line_buffer().split(" ")
+		vocab = []
+
+		if len(words) == 1:
+			vocab = glb.commands
+
+		if words[0] == "add":
+			if len(words) == 2:
+				vocab = glb.command_args
+			elif len(words) == 3:
+				vocab = complete_path(db, selected, words[2])
+
+		if selected is not None and words[0] in ["ls", "rm", "cd"]:
+			vocab = complete_path(db, selected, words[1])
+			
+		results = [i for i in vocab if i.startswith(words[-1])] + [None]
+		return results[state]
+	return completer
 	
-	
+
 def _main():
 	readline.parse_and_bind("tab: complete")
-	readline.set_completer(completer)
+	readline.set_completer_delims(" \t\n`~!@#$%^&*()-=+[]{}\\|;:\"',<>?")
+	readline.set_completer(completer_wrapper(None, None))
 
 	selected_element = None
 	# Eğer database okuyabilmişsek yolla bakalım
 	database = rv if (rv := ldb.read_database()) else \
 		(None, print(f"{glb.info} No database found..."))[0]
 
+
 	try:
 		while True:
+			readline.set_completer(completer_wrapper(database, selected_element))
 			database, selected_element, rv = \
 				parser(input(f"tunapro1238]{glb.clean} >> "), database, selected_element)
 			if rv != True: print(rv)
