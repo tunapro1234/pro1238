@@ -39,12 +39,13 @@ import readline
 # cd . && cd ..
 # ls /folder/subject
 # cd to subject check
-#
-# TODO
 # tab tamamlama / koyma
 # environment
-# var olan databasei yok edecek her fonksiyona check konulmalı
 # ls -l
+#
+# TODO
+# var olan databasei yok edecek her fonksiyona check konulmalı
+# ls -lr
 # pwd
 #
 # DATABASE:
@@ -55,9 +56,9 @@ import readline
 # passing sub_elements to functions??
 
 
-# programla ilgili genel global 
-# değişkenlerin tutulacağı değişken classı
 class Environment:
+	# programla ilgili genel global 
+	# değişkenlerin tutulacağı değişken classı
 	def __init__(self, root=None, curdir=None):
 		self.root = root
 		self.curdir = root if curdir is None else None
@@ -133,7 +134,13 @@ def complete_path(env, word):
 	# girmemesi için
 	beg = beg if beg == "" else beg + "/"
 	# son eleman yerine olabilecek seçenekleri yerleştir
-	return [beg + e for e in nbase.list_sub_names()]
+	final = []
+	for element in nbase.sub_elements:
+		final.append(beg + element.name)
+		if type(element) == Folder:
+			final[-1] += "/"
+	return final
+
 		
 
 def completer_wrapper(env):

@@ -74,6 +74,8 @@ def colorize_element(element):
 		return glb.colorize(element.name, glb.folder_color)
 	elif type(element) == Subject:
 		return glb.colorize(element.name, glb.subject_color)
+	elif element in "..":
+		return glb.colorize(element, glb.folder_color)
 	else: raise Exception
 
 def _ls(env, argv=None):
@@ -122,12 +124,17 @@ def _ls(env, argv=None):
 
 	# eğer tüm dosta ve klasörlerim recursive bir şekilde okumak istesek
 	if "r" in options: 
-		print(ls_recursive(env), end="")
+		print(ls_recursive(env.curdir), end="")
 	else: 
 		# elemanları okuyup renklendir
 		output = [colorize_element(e) for e in env.curdir.sub_elements]
+		# eğer hepsi okunmak isteniyorsa . ve .. da gösteriliyor
+		if "a" in options: 
+			output = [colorize_element("."), colorize_element("..")] + output
 		# eğer liste halinde isteniyorsa alt alta sırala
-		if "l" in options: output = "\n".join(output)
+		if "l" in options: 
+			output = "\n".join([f"{i}. {j}" for i, j in enumerate(output)] \
+					+ [f"total {len(output)} files"])
 		# liste değilse boşluk yeterli
 		else: output = " ".join(output)
 		# yapıştır gitsin
