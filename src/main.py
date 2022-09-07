@@ -40,6 +40,7 @@ import os
 #	_add_entry fonksiyonları
 #
 # TODO
+# environment
 # "" error parsing
 # üst foldera erişemiyoruz aa
 # var olan databasei yok edecek her fonksiyona check konulmalı
@@ -95,7 +96,7 @@ def _cd(db, selected, argv):
 			else selected).find_by_path(target)
 
 	if new_selected == False: 
-		print("No such file or directory...")
+		print(f"No such file or directory: {target}")
 		return db, selected, False
 	return db, new_selected, True
 
@@ -151,10 +152,15 @@ def _ls(db, selected=None, argv=None):
 			# target stringini target objesine çevirip
 			# ls fonksiyonuna selected olarak veriyoruz
 			target_object = selected.find_by_path(target)
-			# eğer recursive lslerden herhangi biri 
-			# false döndürürse biz de false döndüreceğiz
-			if _ls(db, target_object, filtered_argv)[2] == False:
-				rv = False
+		
+			# eğer path bulunamadıysa
+			if target_object == False:
+				print(f"No such file or directory: {target}")
+			else:
+				# eğer recursive lslerden herhangi biri 
+				# false döndürürse biz de false döndüreceğiz
+				if _ls(db, target_object, filtered_argv)[2] == False:
+					rv = False
 			# son satırda ek boşluk bırakmasın diye
 			if i + 1 != len(targets): print()
 		return db, selected, rv
@@ -212,63 +218,6 @@ def _clear(db, selected, *args, **kwargs):
 
 def _exit(*args, **kwargs):
 	quit()
-
-
-def __check_input(db, selected, keywords, text):
-	if text == "": return False
-	
-	for word in text.split(" "):
-		if check_if_path(db, selected, word): continue
-		if word in keywords: continue
-		if word == "": continue
-		return False
-	return True
-
-
-def __parser(input_text, database, selected_element=None):
-	selected_element = database if selected_element is None else selected_element
-	# Biraz illegal ama debugging kolaylaştırmak için 
-	# her çıkmak istediğimde exit yazmamalıyım
-	if input_text in ["q", "quit"]: quit()
-	
-	# verilen inputta hata yoksa
-	if check_input(database, selected_element, glb.keywords, input_text):
-		# inputtan koparmak istediğimiz üç farklı string/array var
-		# biri arguments, sadece dosya ya da klasör ismi olabiliyor
-		arguments = []
-		# biri d_arguments "-" ile başlayan argümanlar için
-		d_arguments = ""
-		# diğeri de fonksiyon ismi
-		function_name = []
-		# her bir kelime için
-		for word in input_text.split(" "):
-			# eğer sona boşluk bırakılırsa ya da iki 
-			# boşluk bırakılırsa hata çıkmasın diye
-			if word == "": continue
-			# eğer kelime "-" ile başlıyorsa "-"yi atıp d_argumentsa ekle
-			if word.startswith("-"): 
-				d_arguments += word[1:]
-			# eğer kelime seçili olan klasörün altındaki 
-			# bir eleman ismine eşitse argumentsa ekle
-			elif check_if_path(database, selected_element, word): 
-				arguments.append(word)
-			# hiçbiri değilse fonksyion ismine ekle
-			else: 
-				function_name.append(word)
-
-		# fonksiyon ismi uyarlaması
-		function_name = "_".join(function_name).strip()
-		return eval(f"_{function_name}(database, selected_element, arguments, d_arguments)")
-
-	# Release için burası kullanılabilir
-#		try:
-#			rv = eval(f"_{function_name}(database, selected_element, arguments, d_arguments)")
-#		except NameError: pass
-#		else: return rv
-			
-	# Debuggingi kolaylaştırmak için
-	print(f"Error parsing: {input_text}")
-	return database, selected_element, False
 
 
 def check_input(argv):
@@ -393,15 +342,20 @@ def _main():
 	if db == False:
 		print(f"{glb.info} No database found...")
 		db = None
+	else:
+		ldb.meet_your_parents(db)
+		selected = db
 
 	while True:
 		try:
 			# completer fonksiyonu ayarla
 			readline.set_completer(completer_wrapper(db, selected))
-			# kullanıcıdan input al
-			input_text = input(f"tunapro1238]{glb.clean} >> ")
-			# girilen inputu parsera yolla
-			db, selected, rv = parser(db, selected, input_text)
+			# eğer database okunmuşsa içinde 
+			# bulunduğumuz klasörü prompta da yazdır
+			prompt = f"tunapro1238]{glb.clean} >> " if selected is None \
+					else f"tunapro1238 {selected.name}]{glb.clean} >> "
+			# kullanıcının girdiği inputu parsera yolla
+			db, selected, rv = parser(db, selected, input(prompt))
 
 		except KeyboardInterrupt: 
 			# aslında input olarak hiçbir şey girilmemişse 

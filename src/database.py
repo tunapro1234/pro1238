@@ -34,7 +34,10 @@ import os
 
 
 class Folder:
-	def __init__(self, name: str, version: str, sub_elements: list, comment: str = "", data: list = []):
+	def __init__(self, name: str, version: str, sub_elements: list, 
+			comment: str = "", data: list = [], parent = None):
+
+		self.parent = parent
 		self.version = version
 		self.name = name
 
@@ -136,6 +139,12 @@ class Folder:
 		return nbase
 
 	def find_by_name(self, name):
+		if name == ".": return self
+		if name == "..": 
+			if self.parent is not None and type(self.parent) != str:
+				return self.parent
+			else: return False
+
 		arr = [i for i in self.sub_elements if i.name == name]
 		if len(arr) != 1: return False
 		return arr[0]
@@ -146,11 +155,13 @@ class Folder:
 
 
 class Subject:
-	def __init__(self, name: str, full_name: str, version: str, 
-			factor: float, target: float = 0, comment: str = "", data: list = []):
+	def __init__(self, name: str, full_name: str, version: str, factor: float, 
+			target: float = 0, comment: str = "", data: list = [], parent = None):
+
+		self.parent = parent
 		self.version = version
-		self.name = name
 		self.full_name = full_name
+		self.name = name
 
 		self.comment = comment
 		self.factor = factor
@@ -237,7 +248,6 @@ class Entry:
 		return [Entry(**entry) for entry in str_list]
 
 
-
 date_format = "%d/%m/%y %H:%M:%S.%f"
 
 default_path = Path("res/data")
@@ -270,6 +280,7 @@ default_structure = \
 			])
 
 
+
 def add_entry(self, path, date = None, *args, **kwargs):
 	date = datetime.datetime.now() if date is None else date
 	self.data.append(Entry(date, self.name, *args, **kwargs))
@@ -283,6 +294,24 @@ def read_database(path = default_path):
 
 def write_database(main_folder: Folder = default_structure, path = default_path):
 	return main_folder.write(path)
+
+
+def meet_your_parents(mother: Folder, first_born=True):
+	# Eğer recursion başlamadıysa
+	if first_born: mother.parent = mother
+	# her bir alt eleman için
+	for child in mother.sub_elements:
+		# alt elemanın parentını 
+		# şu anki folder olarak belirle
+		child.parent = mother
+		# eğer alt eleman Foldersa onun alt 
+		# elemanları için de aynı işlemi yap
+		if type(child) == Folder:
+			# çocuklara haddini bildir
+			meet_your_parents(child, first_born=False)
+
+# default_structureın parentlarını ayarla
+meet_your_parents(default_structure)
 
 
 # def check_properties(path, _type):
