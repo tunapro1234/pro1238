@@ -51,7 +51,7 @@ def _cd(env, argv):
 	return True
 
 
-def ls_recursive(target: Folder, tab=" "):
+def __ls_recursive(target: Folder, tab=" "):
 	# belirli bşr klasör altındaki tüm klasörleri görmemizi sağlıyor
 	# öncelikle bulunduğumuz klasörün ismi
 	output = colorize_element(target) + "\n"
@@ -66,6 +66,22 @@ def ls_recursive(target: Folder, tab=" "):
 		elif type(element) == Subject:
 			# başa tab at ve çıktıya ekle
 			output += tab + colorize_element(element) + "\n"
+	return output
+
+def ls_recursive(target: Folder, tab=" "):
+	# belirli bşr klasör altındaki tüm klasörleri görmemizi sağlıyor
+	# öncelikle bulunduğumuz klasörün ismi
+	output = [colorize_element(target)]
+	# klasörün içindeki her bir eleman için
+	for element in target.sub_elements:	
+		# eğer eleman klasörse o klasör için bu fonksyionu tekrar çağır
+		if type(element) == Folder:
+			# her bir satırı parçala ve satır başlarına tab ekle
+			output += [tab + line for line in ls_recursive(element, tab) if line != ""]
+		# klasör değilse
+		elif type(element) == Subject:
+			# başa tab at ve çıktıya ekle
+			output.append(tab + colorize_element(element))
 	return output
 
 def colorize_element(element):
@@ -122,23 +138,30 @@ def _ls(env, argv=None):
 		return rv
 
 
-	# eğer tüm dosta ve klasörlerim recursive bir şekilde okumak istesek
+	## Başlangıç
+	# eğer tüm dosta ve klasörleri
+	# recursive bir şekilde okumak istesek
 	if "r" in options: 
-		print(ls_recursive(env.curdir), end="")
+		output = ls_recursive(env.curdir)
 	else: 
-		# elemanları okuyup renklendir
 		output = [colorize_element(e) for e in env.curdir.sub_elements]
-		# eğer hepsi okunmak isteniyorsa . ve .. da gösteriliyor
-		if "a" in options: 
-			output = [colorize_element("."), colorize_element("..")] + output
-		# eğer liste halinde isteniyorsa alt alta sırala
-		if "l" in options: 
-			output = "\n".join([f"{i}. {j}" for i, j in enumerate(output)] \
-					+ [f"total {len(output)} files"])
-		# liste değilse boşluk yeterli
-		else: output = " ".join(output)
-		# yapıştır gitsin
-		print(output)
+	
+	## Düzenleme
+	# eğer hepsi okunmak isteniyorsa (ve "r" yoksa). ve .. da gösteriliyor
+	if "a" in options and "r" not in options:
+		output = [colorize_element("."), colorize_element("..")] + output
+
+	## Birleştirme
+	# eğer liste halinde isteniyorsa alt alta sırala
+	if "l" in options: 
+		output = "\n".join([f"{i}. {j}" for i, j in enumerate(output)] \
+				+ [f"total {len(output)} files"])
+	# recursive güzel gözüksün diye alt alta yazdır
+	elif "r" in options: output = "\n".join(output)
+	# liste değilse boşluk yeterli
+	else: output = " ".join(output)
+	# yapıştır gitsin
+	print(output)
 	return True
 
 

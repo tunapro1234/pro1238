@@ -42,10 +42,10 @@ import readline
 # tab tamamlama / koyma
 # environment
 # ls -l
+# ls -lr
 #
 # TODO
 # var olan databasei yok edecek her fonksiyona check konulmalı
-# ls -lr
 # pwd
 #
 # DATABASE:
