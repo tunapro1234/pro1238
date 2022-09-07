@@ -15,7 +15,8 @@ keywords_help = {
 		"mkdir": "Make directory (Folder)",
 		"mksub": "Make Subject",
 		"mkent": "Make Entry",
-		"clear": "Clear screen"
+		"clear": "Clear screen",
+		"exit": "Exit"
 }
 
 commands = list(keywords_help.keys())
@@ -27,11 +28,12 @@ clean = colorama.Style.RESET_ALL
 warn = f"[{colorama.Fore.YELLOW} WARN {colorama.Style.RESET_ALL}]"
 info = f"[{colorama.Fore.BLUE} INFO {colorama.Style.RESET_ALL}]"
 fail = f"[{colorama.Fore.RED} FAIL {colorama.Style.RESET_ALL}]"
+bold = '\033[1m'
 
-folder_color = colorama.Fore.BLUE
+folder_color = colorama.Fore.BLUE + bold
 # subject_color = colorama.Fore.WHITE
 subject_color = colorama.Style.RESET_ALL
 
-def colorize(color, string):
-	return f"{color}{string}{colorama.Style.RESET_ALL}"
+def colorize(string, *colors):
+	return f"{''.join(colors)}{string}{colorama.Style.RESET_ALL}"
 

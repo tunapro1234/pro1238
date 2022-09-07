@@ -61,6 +61,7 @@ def completer_wrapper(db, selected):
 		return results[state]
 	return completer
 
+
 def completer_foo(db, selected, text):
 	words = text.split(" ")
 	vocab = []
@@ -80,8 +81,25 @@ def completer_foo(db, selected, text):
 	results = [i for i in vocab if i.startswith(words[-1])] + [None]
 	return results
 
+
+def check_if_path(db, selected, text):
+	if selected is None or db is None: return False
+	base = db if text.startswith("/") else selected
+
+	names = [i for i in text.split("/") if i != ""]
+	nbase = base
+	for name in names[:-1]:
+		nbase = nbase.find_by_name(name)
+		if nbase == False: return False
+
+	if len(names) != 0 and names[-1] in nbase.list_sub_names():
+		return True
+	return False	
+
+
 def main():
 	readline.parse_and_bind("tab: complete")
+	readline.set_completer_delims(" \t\n`~!@#$%^&*()-=+[]{}\\|;:\"',<>?")
 	# readline.set_completer(completer_wrapper(None, None))
 
 	db = database.default_structure
@@ -90,7 +108,7 @@ def main():
 	while True:
 		readline.set_completer(completer_wrapper(db, selected))
 		inp = input(f"tunapro1238] >> ")
-		rv = completer_foo(db, selected, inp)
+		rv = check_if_path(db, selected, inp)
 		print(rv)
 # 		rv = complete_path(db, selected, inp)
 # 		print([i for i in rv if i.startswith(inp)])

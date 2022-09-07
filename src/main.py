@@ -73,11 +73,11 @@ def _pwd(db, selected, *args, **kwargs):
 	raise NotImplemented
 
 
-def _cd(db, selected, arguments, d_arguments):
+def _cd(db, selected, argv):
 	raise NotImplemented
 
 
-def ls_recursive(target: Folder, tab="	"):
+def ls_recursive(target: Folder, tab=" "):
 	# belirli bşr klasör altındaki tüm klasörleri görmemizi sağlıyor
 	# öncelikle bulunduğumuz klasörün ismi
 	output = colorize_element(target) + "\n"
@@ -86,7 +86,8 @@ def ls_recursive(target: Folder, tab="	"):
 		# eğer eleman klasörse o klasör için bu fonksyionu tekrar çağır
 		if type(element) == Folder:
 			# her bir satırı parçala ve satır başlarına tab ekle
-			output += "\n".join([tab + line for line in ls_recursive(element, tab).split("\n") if line != ""]) + "\n"
+			output += "\n".join([tab + line for line in \
+					ls_recursive(element, tab).split("\n") if line != ""]) + "\n"
 		# klasör değilse
 		elif type(element) == Subject:
 			# başa tab at ve çıktıya ekle
@@ -101,76 +102,84 @@ def colorize_element(element):
 		return glb.colorize(element.name, glb.subject_color)
 	else: raise Exception
 
-def _ls(db, selected=None, arguments=None, d_arguments=None):
+def _ls(db, selected=None, argv=None):
 	# klasik default argüman şeyleri
+	argv = [] if argv is None else argv
 	selected = db if selected is None else selected
-	arguments = [] if arguments is None else arguments
-	d_arguments = [] if d_arguments is None else d_arguments
+	d_arguments = [i for i in argv if i.startswith("-")]
+	# Bu değişkenin ileride düzenlenmesi gerekebilir
+	options = "".join(d_arguments).replace("-", "")
 
 	# eğer klasör yerine dosyayı lslemeye çalışırsak
 	if type(selected) == Subject:
 		print("Cannot ls into Subject")
 		return db, selected, False
 
-	# eğer hedef argüman olarak belirtildiyse
-	if len(arguments) == 1:
-		return _ls(db, selected.find_by_path(arguments[0]), None, d_arguments)
+	rv = True
+	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
+	if len(targets) > 0:
+		for i, target in enumerate(targets):
+			if len(targets) > 1:
+				print(f"{target}: ")
 
-	# eğer birden fazla hedef argüman olarak belirtildiyse
-	elif len(arguments) > 1:
-		# her bir argüman için tekrar bu fonksiyonu çağırıyoruz
-		for i, target in enumerate(arguments):
-			print(f"{target}: ")
-			# recursion işte
-			_ls(db, selected.find_by_path(target), None, d_arguments)
+			# sonsuz döngüye girmemek için 
+			# argvden targetları siliyoruz
+			filtered_argv = [argv[0]] + d_arguments
+			# target stringini target objesine çevirip
+			# ls fonksiyonuna selected olarak veriyoruz
+			target_object = selected.find_by_path(target)
+			# eğer recursive lslerden herhangi biri 
+			# false döndürürse biz de false döndüreceğiz
+			if _ls(db, target_object, filtered_argv)[2] == False:
+				rv = False
 			# son satırda ek boşluk bırakmasın diye
-			if i + 1 != len(arguments): print()
-		return db, selected, True
+			if i + 1 != len(targets): print()
+		return db, selected, rv
 
 
 	# eğer tüm dosta ve klasörlerim recursive bir şekilde okumak istesek
-	if "r" in d_arguments: 
+	if "r" in options: 
 		print(ls_recursive(selected), end="")
 	else: 
 		# elemanları okuyup renklendir
 		output = [colorize_element(e) for e in selected.sub_elements]
 		# eğer liste halinde isteniyorsa alt alta sırala
-		if "l" in d_arguments: output = "\n".join(output)
+		if "l" in options: output = "\n".join(output)
 		# liste değilse boşluk yeterli
 		else: output = " ".join(output)
 		# yapıştır gitsin
 		print(output)
 	return db, selected, True
 
-def _le(db, selected, arguments, d_arguments):
+def _le(db, selected, argv):
 	raise NotImplemented
 
 
-def _rm(db, selected, arguments, d_arguments):
+def _rm(db, selected, argv):
 	raise NotImplemented
 
-def _re(db, selected, arguments, d_arguments):
+def _re(db, selected, argv):
 	raise NotImplemented
 
 
 def _add_folder(*args, **kwargs):
 	return _mkdir(*args, **kwargs)
 
-def _mkdir(db, selected, arguments, d_arguments):
+def _mkdir(db, selected, argv):
 	raise NotImplemented
 
 
 def _add_subject(*args, **kwargs):
 	return _mksub(*args, **kwargs)
 
-def _mksub(db, selected):
+def _mksub(db, selected, argv):
 	raise NotImplemented
 
 
 def _add_entry(*args, **kwargs):
 	return _mkent(*args, **kwargs)
 
-def _mkent(db, selected):
+def _mkent(db, selected, argv):
 	raise NotImplemented
 
 
@@ -182,7 +191,7 @@ def _exit(*args, **kwargs):
 	quit()
 
 
-def check_input(db, selected, keywords, text):
+def __check_input(db, selected, keywords, text):
 	if text == "": return False
 	
 	for word in text.split(" "):
@@ -193,7 +202,7 @@ def check_input(db, selected, keywords, text):
 	return True
 
 
-def parser(input_text, database, selected_element=None):
+def __parser(input_text, database, selected_element=None):
 	selected_element = database if selected_element is None else selected_element
 	# Biraz illegal ama debugging kolaylaştırmak için 
 	# her çıkmak istediğimde exit yazmamalıyım
@@ -239,6 +248,26 @@ def parser(input_text, database, selected_element=None):
 	return database, selected_element, False
 
 
+def check_input(argv):
+	# Biraz daha check eklenebilir
+	if len(argv) == 0: return False
+	# Eğer çalıştırılmaya çalışılan fonksiyon bizim 
+	# yazdığımız fonksiyonlardan değilse kabul etme
+	if argv[0] not in glb.keywords: return False
+
+
+def parser(db, selected, input_text):
+	selected = db if selected is None else selected
+	if input_text in ["q", "quit"]: quit()
+
+	argv = [i for i in input_text.split(" ") if i != ""]
+	if check_input(argv) == False:
+		print(f"Error parsing: {input_text}")
+		return db, selected, False
+	
+	return eval(f"_{argv[0]}(db, selected, argv)")
+
+
 def check_if_path(db, selected, text):
 	# Ufak bir wrapper fonksiyon
 	if selected is None or db is None: return False
@@ -269,7 +298,8 @@ def complete_path(db, selected, word):
 		# eğer folder/subject/subject tarzı bir şey yapılmaya 
 		# çalışılırsa hata veriyor
 		if type(nbase) == Subject: return []
-		# geçen seferki folder içinden gelecek elemanı nbase değişkenine ver
+		# geçen seferki folder içinden 
+		# gelecek elemanı nbase değişkenine ver
 		nbase = nbase.find_by_name(name)
 		# eleman isminden bulunamazsa boşver
 		if nbase == False: return []
@@ -341,7 +371,7 @@ def _main():
 			# kullnıcıdan input al
 			input_text = input(f"tunapro1238]{glb.clean} >> ")
 			# girilen inputu parsera yolla
-			db, selected, rv = parser(input_text, db, selected)
+			db, selected, rv = parser(db, selected, input_text)
 
 		except KeyboardInterrupt: 
 			# aslında input olarak hiçbir şey girilmemişse 
