@@ -54,7 +54,6 @@ import os
 # passing sub_elements to functions??
 
 
-
 def _help(db, selected, *args, **kwargs):
 	for key, value in glb.keywords_help.items():
 		print(f"[{key}]: {value}")
@@ -260,6 +259,13 @@ def parser(db, selected, input_text):
 	selected = db if selected is None else selected
 	if input_text in ["q", "quit"]: quit()
 
+	# şimdilik sadece bu operatörü test için geliştiriyorum
+	if "&&" in input_text:
+		for command in input_text.split("&&"):
+			db, selected, rv = parser(db, selected, command)
+			if rv == False: return db, selected, False
+		return db, selected, True
+
 	argv = [i for i in input_text.split(" ") if i != ""]
 	if check_input(argv) == False:
 		print(f"Error parsing: {input_text}")
@@ -342,7 +348,8 @@ def completer_wrapper(db, selected):
 	return completer
 	
 
-def _main():
+def _main(loop=None):
+	loop = True if loop is None else False
 	# otomatik tamamlama için temel readline komutları
 	# tab completion olcak
 	readline.parse_and_bind("tab: complete")
@@ -364,11 +371,11 @@ def _main():
 		print(f"{glb.info} No database found...")
 		db = None
 
-	while True:
+	while loop:
 		try:
 			# completer fonksiyonu ayarla
 			readline.set_completer(completer_wrapper(db, selected))
-			# kullnıcıdan input al
+			# kullanıcıdan input al
 			input_text = input(f"tunapro1238]{glb.clean} >> ")
 			# girilen inputu parsera yolla
 			db, selected, rv = parser(db, selected, input_text)
@@ -378,7 +385,14 @@ def _main():
 			# ctrl c yapıldığında programdan çıkış yapabilmeyi
 			# çok isterdim ama nasıl yapacağımı bulamadım :-(
 			print()
+	else:
+		return parser(db, selected, \
+				get_input(f"tunapro1238]{glb.clean} >> "))
 
+
+def get_input(*args, **kwargs):
+	# Testingi kolaylaştırmak için
+	return input(*args, **kwargs)
 
 
 
