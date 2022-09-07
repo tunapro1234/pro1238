@@ -41,8 +41,10 @@ import os
 #
 # TODO
 # "" error parsing
+# üst foldera erişemiyoruz aa
 # var olan databasei yok edecek her fonksiyona check konulmalı
 # CD:
+#	cd . && cd ..
 # LS:
 #	ls /folder/subject
 #	ls -l
@@ -69,11 +71,33 @@ def _init(db, selected, *args, **kwargs):
 
 
 def _pwd(db, selected, *args, **kwargs):
-	raise NotImplemented
+#	print(glb.warn, "PWD IMPLEMENTATION NOT COMPLETED.")
+	print(f"Current folder name: {selected.name}")
+	return db, selected, True
 
 
 def _cd(db, selected, argv):
-	raise NotImplemented
+	argv = [] if argv is None else argv
+	selected = db if selected is None else selected
+	d_arguments = [i for i in argv if i.startswith("-")]
+
+	target = [i for i in argv if not i.startswith("-") and i != argv[0]]
+	# Birden fazla klasör verildiyse hata ver
+	if len(target) > 1: 
+		print("Too many arguments...")
+		return db, selected, False
+	# Eğer sadece cd yazıldıysa root klasöre geri dön
+	elif len(target) == 0:
+		target.append("/")
+	target = target[0]
+
+	new_selected = (db if target.startswith("/") \
+			else selected).find_by_path(target)
+
+	if new_selected == False: 
+		print("No such file or directory...")
+		return db, selected, False
+	return db, new_selected, True
 
 
 def ls_recursive(target: Folder, tab=" "):
