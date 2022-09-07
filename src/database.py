@@ -122,8 +122,23 @@ class Folder:
 		return [(element.list_names_r() if type(element) == Folder \
 			else element.name) for element in self.sub_elements]
 
+	def find_by_path(self, text):
+		names = [i for i in text.split("/") if i != ""]
+
+		nbase = self
+		for name in names:
+			# Subjectin find_by_name fonksiyonu yok,
+			# eğer folder/subject/subject tarzı bir şey yapılmaya 
+			# çalışılırsa hata veriyor
+			if type(nbase) == Subject: return False
+			nbase = nbase.find_by_name(name)
+			if nbase == False: return False
+		return nbase
+
 	def find_by_name(self, name):
-		return [i for i in self.sub_elements if i.name == name][0]
+		arr = [i for i in self.sub_elements if i.name == name]
+		if len(arr) != 1: return False
+		return arr[0]
 
 	def add_entry(*args, **kwargs):
 		return add_entry(*args, **kwargs)
