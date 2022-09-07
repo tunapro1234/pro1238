@@ -19,8 +19,13 @@ def _init(env, *args, **kwargs):
 
 
 def _pwd(env, *args, **kwargs):
-	print(glb.warn, "PWD IMPLEMENTATION NOT COMPLETED.")
-	print(f"Current folder name: {env.curdir.name}")
+	path = []
+	current = env.curdir
+	while current != env.root:
+		path = [current.name] + path
+		current = current.parent
+
+	print("/" + "/".join(path))
 	return True
 
 
@@ -49,24 +54,6 @@ def _cd(env, argv):
 		return False
 	env.curdir = newdir
 	return True
-
-
-def __ls_recursive(target: Folder, tab=" "):
-	# belirli bşr klasör altındaki tüm klasörleri görmemizi sağlıyor
-	# öncelikle bulunduğumuz klasörün ismi
-	output = colorize_element(target) + "\n"
-	# klasörün içindeki her bir eleman için
-	for element in target.sub_elements:	
-		# eğer eleman klasörse o klasör için bu fonksyionu tekrar çağır
-		if type(element) == Folder:
-			# her bir satırı parçala ve satır başlarına tab ekle
-			output += "\n".join([tab + line for line in \
-					ls_recursive(element, tab).split("\n") if line != ""]) + "\n"
-		# klasör değilse
-		elif type(element) == Subject:
-			# başa tab at ve çıktıya ekle
-			output += tab + colorize_element(element) + "\n"
-	return output
 
 def ls_recursive(target: Folder, tab=" "):
 	# belirli bşr klasör altındaki tüm klasörleri görmemizi sağlıyor
