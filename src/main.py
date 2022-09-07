@@ -268,7 +268,7 @@ def parser(db, selected, input_text):
 
 	argv = [i for i in input_text.split(" ") if i != ""]
 	if check_input(argv) == False:
-		print(f"Error parsing: {input_text}")
+		print(f"command not found: {input_text}")
 		return db, selected, False
 	
 	return eval(f"_{argv[0]}(db, selected, argv)")
@@ -348,8 +348,7 @@ def completer_wrapper(db, selected):
 	return completer
 	
 
-def _main(loop=None):
-	loop = True if loop is None else False
+def _main():
 	# otomatik tamamlama için temel readline komutları
 	# tab completion olcak
 	readline.parse_and_bind("tab: complete")
@@ -371,7 +370,7 @@ def _main(loop=None):
 		print(f"{glb.info} No database found...")
 		db = None
 
-	while loop:
+	while True:
 		try:
 			# completer fonksiyonu ayarla
 			readline.set_completer(completer_wrapper(db, selected))
@@ -385,15 +384,18 @@ def _main(loop=None):
 			# ctrl c yapıldığında programdan çıkış yapabilmeyi
 			# çok isterdim ama nasıl yapacağımı bulamadım :-(
 			print()
-	else:
-		return parser(db, selected, \
-				get_input(f"tunapro1238]{glb.clean} >> "))
 
 
-def get_input(*args, **kwargs):
-	# Testingi kolaylaştırmak için
-	return input(*args, **kwargs)
+def _main_tester(input_text=None):
+	input_text = "" if input_text is None else input_text
 
+	readline.parse_and_bind("tab: complete")
+	readline.set_completer_delims(" \t\n`~!@#$%^&*()-=+[]{}\\|;:\"',<>?")
 
+	db = ldb.default_structure 
+	selected = db
+
+	readline.set_completer(completer_wrapper(db, selected))
+	return parser(db, selected, input_text)
 
 
