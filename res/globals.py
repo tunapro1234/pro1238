@@ -12,7 +12,6 @@ keywords_help = {
 		"le": "List entry",
 		"rm": "",
 		"re": "Remove entry",
-		"add": "Same with makes",
 		"mkdir": "Make directory (Folder)",
 		"mksub": "Make Subject",
 		"mkent": "Make Entry",
@@ -20,20 +19,23 @@ keywords_help = {
 		"exit": "Exit"
 }
 
-database_dependent = [ 
+database_dependent_keywords = [ 
 		"pwd", "cd", "ls", "le", "rm", 
 		"re", "mkdir", "mksub", "mkent" 
 		]
 
-commands = list(keywords_help.keys())
-command_args = ["subject", "folder", "data"]
-keywords = commands + command_args
+path_user_keywords = [ 
+		"pwd", "cd", "ls", "le", 
+		"rm", "re", "mkent" 
+		]
 
+keywords = list(keywords_help.keys())
 
 clean = colorama.Style.RESET_ALL
-warn = f"[{colorama.Fore.YELLOW} WARN {colorama.Style.RESET_ALL}]"
-info = f"[{colorama.Fore.BLUE} INFO {colorama.Style.RESET_ALL}]"
-fail = f"[{colorama.Fore.RED} FAIL {colorama.Style.RESET_ALL}]"
+warn = f"[{colorama.Fore.YELLOW	} WARN {colorama.Style.RESET_ALL}]"
+info = f"[{colorama.Fore.BLUE	} INFO {colorama.Style.RESET_ALL}]"
+fail = f"[{colorama.Fore.RED	} FAIL {colorama.Style.RESET_ALL}]"
+ok   = f"[{colorama.Fore.GREEN	}  OK  {colorama.Style.RESET_ALL}]"
 bold = '\033[1m'
 
 

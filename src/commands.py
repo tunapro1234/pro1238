@@ -14,10 +14,21 @@ def _reconfigure(env, *args, **kwargs):
 	raise Exception("not implemented")
 
 def _init(env, *args, **kwargs): 
-	db.write_database()
-	print(f"{glb.info} database created successfully")
+	# okunmuş database varsa (çok şükür)
+	if env.root is not None:
+		print(f"{glb.warn} this will overwrite current database")
+		if input(f"{glb.inpst} continue? ") != "y": return 
+	# eğer database kuracağımız klasör varsa
+	#	ve klasörün içinde herhangi bir dosya varsa
+	elif db.default_path.exists() and \
+			len(os.listdir(db.default_path)) != 0:
+		print("{glb.warn} this will overwrite the files in {db.deafult_path.name}")
+		if input(f"{glb.inpst} continue? ") != "y": return 
 
-	# Yeni databasei oku
+	db.write_database()
+	print(f"{glb.ok} database created successfully")
+
+	# Yeni databasei environmenta yaz
 	env.reset(db.read_database())
 
 
@@ -185,7 +196,7 @@ def _rm(env, argv):
 				_type = "Subject" if type(target_object) == Subject else "Folder"
 				if input(f"{glb.inpst} {argv[0]}: remove {_type} {target}? ") == "y":
 					env.remove(target_object)
-					print(f"{glb.info} {argv[0]}: deleted {target_path}")
+					print(f"{glb.ok} {argv[0]}: deleted {target_path}")
 				else:
 					print(f"{glb.info} {argv[0]}: canceled")
 
@@ -228,7 +239,7 @@ def _mkent(env, argv):
 		get_ent_rv = get_entry_data(target)
 	except KeyboardInterrupt:
 		print()
-		raise Exception("fuck off dude")
+		raise Exception("canceled")
 
 	# eğer en üst klasör de atlanmaya çalışılırsa
 	# get entry data fonksiyonunu okursan anlarsın
@@ -333,9 +344,9 @@ def ask_data(target, state=None):
 	inp = input(f"{glb.inpst} {target.name}: {val} > ")
 
 	# eğer bir şey girilmemişse hata ver
-	if inp.strip() == "": raise Exception("Skipped")
+	if inp.strip() == "": raise Exception("skipped")
 	# eğer sayı girilmemişse hata ver
-	if inp.isnumeric() != True: raise Exception("Input Error")
+	if inp.isnumeric() != True: raise Exception("input error")
 	return int(inp)
 
 

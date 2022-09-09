@@ -34,17 +34,15 @@ import readline
 
  
 # DONE
-# hata sistemini True - False tabanlı yapmamalıydım
-# max ve yayın 
-# json düzenlemesi
+# /ty tab complete hatası
+# var olan databasei yok edecek her fonksiyona check konulmalı
 #
 # TODO
-# her prompt atıldığında database check
-# /ty tab complete hatası
+# ls /tyt/folder seçeneklerin kısaltılması
 # database için lock oluşturulmalı
 #
-# var olan databasei yok edecek her fonksiyona check konulmalı
-# entry girme fonksiyonları
+# entry fonksiyonları
+# folder/subject oluşturma fonksiyonları
 #
 # excel export
 
@@ -156,7 +154,7 @@ def parser(env, input_text):
 	
 	# database yoksa ve databasee ihtiyacı 
 	# olan bir fonksiyon çağırmaya çalışıyorsak
-	if argv[0] in glb.database_dependent and env.root is None:
+	if argv[0] in glb.database_dependent_keywords and env.root is None:
 		return print(f"{glb.warn} database necessary for command: {argv[0]}")
 
 	try:
@@ -187,8 +185,10 @@ def complete_path(env, word):
 
 	# her bir / harfinden böl, // görürsen tek bir tane say.
 	names = [i for i in word.split("/") if i != ""]
-	# sadece "/" yazılmışsa
-	if word == "/":
+	# sadece "/" yazılmışsa ya da
+	#	/herhangi_bi_şey yazılmışsa 
+	if word == "/" or \
+			(word.startswith("/") and len(names) == 1):
 		nbase = env.root
 		beg = "/"
 
@@ -237,15 +237,10 @@ def completer_wrapper(env):
 		vocab = []
 
 		if len(words) == 1:
-			vocab = glb.commands
+			vocab = glb.keywords
 
-		if words[0] == "add":
-			if len(words) == 2:
-				vocab = glb.command_args
-			elif len(words) == 3:
-				vocab = complete_path(env, words[2])
-
-		if env.curdir is not None and words[0] in ["ls", "rm", "cd"]:
+		if env.curdir is not None \
+				and words[0] in glb.path_user_keywords:
 			vocab = complete_path(env, words[1])
 			
 		results = [i for i in vocab if i.startswith(words[-1])] + [None]
@@ -273,11 +268,17 @@ def _main():
 	env = Environment(root=database)
 
 	while True:
+		# databasete istenmeyen bir değişiklik 
+		# olduysa değişikliğe ayak uydur
+		if db.is_database_changed(env.root):
+			print(f"{glb.warn} database lost")
+			env.reset(None)
+					
 		# completer fonksiyonu ayarla
 		readline.set_completer(completer_wrapper(env))
 		# eğer database okunmuşsa içinde 
 		# bulunduğumuz klasörü prompta da yazdır
-		prompt = f"tunapro1238]{glb.clean} >> " if env.curdir is None \
+		prompt = f"{glb.inpst} >> " if env.curdir is None \
 				else f"tunapro1238 {env.curdir.name}]{glb.clean} >> "
 		try:
 			# kullanıcının girdiği inputu parsera yolla

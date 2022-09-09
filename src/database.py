@@ -58,6 +58,24 @@ class Folder:
 				}
 
 
+	def dict_recursively(self):
+		dicted_elements = []
+		for element in self.sub_elements:
+			if type(element) == Subject:
+				dicted_elements.append(element.__dict__())
+			elif type(element) == Folder:
+				dicted_elements.append(element.dict_recursively())
+			else: raise Exception("malfunciton 2")
+
+		return {
+				"version": self.version,
+				"name": self.name,
+				"comment": self.comment,
+				"sub_elements": dicted_elements,
+				"data": [entry.__dict__() for entry in self.data] 
+				}
+		
+
 	@classmethod
 	def read(cls, path):
 		path = Path(path) if type(path) == str else path
@@ -114,9 +132,11 @@ class Folder:
 	def list_sub_names(self):
 		return [i.name for i in self.sub_elements]
 
+
 	def list_sub_names_r(self):
 		return [(element.list_names_r() if type(element) == Folder \
 			else element.name) for element in self.sub_elements]
+
 
 	def find_by_path(self, text):
 		names = [i for i in text.split("/") if i != ""]
@@ -129,6 +149,7 @@ class Folder:
 			nbase = nbase.find_by_name(name)
 		return nbase
 
+
 	def find_by_name(self, name):
 		if name == ".": return self
 		if name == "..": 
@@ -139,13 +160,23 @@ class Folder:
 			raise Exception("no such file or directory")
 		return arr[0]
 
+
 	def add_entry(*args, **kwargs):
 		return add_entry(*args, **kwargs)
+
 
 	@property
 	def question_num(self):
 		return sum([i.question_num for i in self.sub_elements])
-
+	
+	
+	def check_equals(self, other):
+		if type(other) != Folder: return False
+		if self.dict_recursively() == other.dict_recursively():
+			return True
+		else: return False
+	
+	
 
 class Subject:
 	def __init__(self, name: str, full_name: str, version: str, question_num: int, 
@@ -238,13 +269,16 @@ class Entry:
 				"comment": self.comment
 				}
 		
+
 	def get_str_date(self):
 		return self.date.strftime(date_format)
+
 
 	@classmethod
 	# str list to entry list
 	def undict(cls, str_list):
 		return [Entry(**entry) for entry in str_list]
+
 
 
 date_format = "%d/%m/%y %H:%M:%S.%f"
@@ -283,7 +317,6 @@ default_structure = \
 def add_entry(self, *args, path = default_path, date = None, **kwargs):
 	date = datetime.datetime.now() if date is None else date
 	self.data.append(Entry(date=date, subject_name=self.name, *args, **kwargs))
-# 	if not self.write(): return False
 	return date
 
 
@@ -320,6 +353,20 @@ def write_database(main_folder: Folder = default_structure, path = default_path)
 	return main_folder.write(path)
 
 
+def is_database_changed(root, path = default_path):
+	# check fonksiyonu olduğu için hata döndürmüyor
+	try:
+		# okunan database şu ankine eşit 
+		# değilse değiştirilmişiz demektir
+		if root.check_equals(read_database()) == False:
+			return True
+	# database okumada sıkıntı çıkarsa 
+	# da değiştirilmiş kabul ediyoruz
+	except: return True
+	# yoksa False
+	return False
+
+
 def meet_your_parents(mother: Folder, first_born=True):
 	# Eğer recursion başlamadıysa
 	if first_born: mother.parent = mother
@@ -336,19 +383,5 @@ def meet_your_parents(mother: Folder, first_born=True):
 
 # default_structureın parentlarını ayarla
 meet_your_parents(default_structure)
-
-
-# def check_properties(path, _type):
-# 	return os.path.exists(os.path.join(path, "properties.json"))	# BURAYI GELİŞTİR
-
-
-# def is_db_folder(path):
-# 	return os.isdir(path) and \
-# 			check_properties(path, Folder)
- 			
-
-# def find_databases(path):
-# 	return [name for name in os.listdir(path) if is_db_folder(os.path.join(path, name))]
-
 
 
