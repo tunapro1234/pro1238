@@ -1,6 +1,7 @@
 import colorama
 
 __version__ = "0.0.0"
+json_indent = 4
 
 keywords_help = {
 		"help": "",
@@ -19,6 +20,11 @@ keywords_help = {
 		"exit": "Exit"
 }
 
+database_dependent = [ 
+		"pwd", "cd", "ls", "le", "rm", 
+		"re", "mkdir", "mksub", "mkent" 
+		]
+
 commands = list(keywords_help.keys())
 command_args = ["subject", "folder", "data"]
 keywords = commands + command_args
@@ -30,6 +36,8 @@ info = f"[{colorama.Fore.BLUE} INFO {colorama.Style.RESET_ALL}]"
 fail = f"[{colorama.Fore.RED} FAIL {colorama.Style.RESET_ALL}]"
 bold = '\033[1m'
 
+
+inpst = f"tunapro1238]{clean}"
 folder_color = colorama.Fore.BLUE + bold
 # subject_color = colorama.Fore.WHITE
 subject_color = colorama.Style.RESET_ALL
@@ -37,4 +45,3 @@ subject_color = colorama.Style.RESET_ALL
 def colorize(string, *colors):
 	return f"{''.join(colors)}{string}{colorama.Style.RESET_ALL}"
 
-database_dependent = [ "pwd", "cd", "ls", "le", "rm", "re", "mkdir", "mksub", "mkent" ]

@@ -183,8 +183,7 @@ def _rm(env, argv):
 				raise Exception("trying to delete a parent directory to current one")
 			else:
 				_type = "Subject" if type(target_object) == Subject else "Folder"
-				print(f"{glb.warn} {argv[0]}: remove {_type} {target}? ", end="")
-				if input() == "y":
+				if input(f"{glb.inpst} {argv[0]}: remove {_type} {target}? ") == "y":
 					env.remove(target_object)
 					print(f"{glb.info} {argv[0]}: deleted {target_path}")
 				else:
@@ -220,24 +219,65 @@ def _mkent(env, argv):
 	elif len(targets) > 1:
 		raise Exception("multiple targets not supported")
 
+	# argümanı objeye çevir
 	target = env.get_from_path(targets[0])
 
-	get_entry_data(target)
+	# entry girişinin ortasında çıkılmaya 
+	# çalışılırsa ufak bir mesaj
+	try: 
+		get_ent_rv = get_entry_data(target)
+	except KeyboardInterrupt:
+		print()
+		raise Exception("fuck off dude")
+
+	# eğer en üst klasör de atlanmaya çalışılırsa
+	# get entry data fonksiyonunu okursan anlarsın
+	if get_ent_rv == False:
+		raise Exception(f"cannot go higher than {target.name}")
+	# sıkıntı yoksa yazdır
 	db.write_database(env.root)
 
 
-def get_entry_data(target, date=None):
+def get_entry_data(target, date=None, publisher=None):
+	# Eğer date verilmemişse (fonksiyon 
+	# dışarıdan çağırılıyorsa) şu anın dateini al
 	date = datetime.datetime.now() if date is None else date
+	# Eklenen tüm entrylerin publisherları aynı 
+	# olacağından sadece bir kere ve en başta alınacak
+	if publisher is None:
+		publisher = input(f"{glb.inpst} publisher > ")
+
+	# Eğer bize verilen eleman klasörse
 	if type(target) == Folder:
+		# alt taraftaki doğru ve yanlışların toplamı 
+		# bizim doğru ve yanlışlarımıza eşit olacak
 		correct, wrong = 0, 0
+		# her bir alt eleman için
 		for element in target.sub_elements:
-			rv = get_entry_data(element)
+			# bu fonksiyonu tekrar çağır
+			rv = get_entry_data(element, date, publisher)
+			# eğer alt taraftaki elemanlar girilmek istenmediyse 
+			# (direkt entera basıldıysa) fonksiyon False döndürüyor
 			if rv == False: 
-				try:
-					correct, wrong = ask_data(target)
+				# sadece klasörümüz için data istemeyi dene (coğrafya 
+				# girilmek istenmediğinde sosyal netini sormak gibi)
+				try: correct, wrong = ask_data(target)
+				except KeyboardInterrupt:
+					raise KeyboardInterrupt
 				except: 
-					print()
+					# print koydum çünkü inputta hata verdiğinde
+					# promptla askin inputu üst üste biniyor
+					#print()
+					# aktif olarak bulunduğumuz subject/folderın 
+					# doğru/yanlış sayıları girilmek istenmiyor
+					# yine coğrafya istenmeyince sosyal netleri
+					# ya da sosyal netleri istenmeyince total tyt
+					# netleri giriliyor
 					return False
+					# peki tytte entera basarsak noluyor
+					# oh fuck
+				# zaten burda direkt klasörün 
+				# doğru/yanlış datasını aldık
 				break
 			
 			else:
@@ -245,18 +285,22 @@ def get_entry_data(target, date=None):
 				wrong += rv[1]
 	
 		# garanti olsun diye keyword arg olarak girdim
-		target.add_entry(date=date, correct=correct, wrong=wrong)
+		target.add_entry(date=date, correct=correct, \
+				wrong=wrong, publisher=publisher)
 		return correct, wrong
 
 	elif type(target) == Subject:
 		try:
 			correct, wrong = ask_data(target)
+		except KeyboardInterrupt:
+			raise KeyboardInterrupt
 		except: 
-			print()
+			#print()
 			return False
 	
 		# garanti olsun diye keyword arg olarak girdim
-		target.add_entry(date=date, correct=correct, wrong=wrong)
+		target.add_entry(date=date, correct=correct, \
+				wrong=wrong, publisher=publisher)
 		return correct, wrong
 	
 	else:
@@ -265,14 +309,28 @@ def get_entry_data(target, date=None):
 
 def ask_data(target, state=None):
 	if state is None:
-		return ask_data(target, 0), ask_data(target, 1)
+		# doğru ve yanlış sayısını al
+		rv = ask_data(target, 0), ask_data(target, 1)
+		# eğer doğru ve yanlış sayısı toplamı toplam 
+		# soru sayısını geçiyorsa baştan dene
+		if sum(rv) > target.question_num:
+			print(f"{glb.warn} total greater than number of questions")
+			print("a little calculation problem i quess?? try that again: ")
+			return ask_data(target)
+		# girilen herhangi bir sayı sıfırdan küçükse
+		# (sadece doğru ve yanlış sayısını aldığımız 
+		#	için negatif olma şansı yok)
+		if rv[0] < 0 or rv[1] < 0:
+			print(f"{glb.warn} negative value problem")
+			print(f"best at {target.name} :-/ try that again: ")
+			return ask_data(target)
+		return rv
 
 	# eğer state 0 sa doğru sayısını iste 
 	# değilse yanlış sayısını iste
 	# evet biraz kafa karıştırıcı biliyorum
 	val = "D" if state == 0 else "Y"
-	print(f"{target.name}: {val} > ", end="")
-	inp = input()
+	inp = input(f"{glb.inpst} {target.name}: {val} > ")
 
 	# eğer bir şey girilmemişse hata ver
 	if inp.strip() == "": raise Exception("Skipped")

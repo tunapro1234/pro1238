@@ -1,4 +1,4 @@
-from res.globals import __version__ as _ver
+from res.globals import __version__ as _ver, json_indent
 from pathlib import Path
 import datetime
 import json
@@ -77,7 +77,7 @@ class Folder:
 		path = Path(path) if type(path) == str else path
 		if not path.exists(): os.mkdir(path)
 		with Path(path, "properties.json").open("w+") as file:
-			json.dump(self.__dict__(), file)
+			json.dump(self.__dict__(), file, indent=json_indent)
 
 
 	def write(self, path):
@@ -142,17 +142,21 @@ class Folder:
 	def add_entry(*args, **kwargs):
 		return add_entry(*args, **kwargs)
 
+	@property
+	def question_num(self):
+		return sum([i.question_num for i in self.sub_elements])
 
 
 class Subject:
-	def __init__(self, name: str, full_name: str, version: str, factor: float, 
-			target: float = 0, comment: str = "", data: list = [], parent = None):
+	def __init__(self, name: str, full_name: str, version: str, question_num: int, 
+			factor: float, target: float = 0, comment: str = "", data: list = [], parent = None):
 
 		self.parent = parent
 		self.version = version
 		self.full_name = full_name
 		self.name = name
 
+		self.question_num = question_num 
 		self.comment = comment
 		self.factor = factor
 		self.target = target
@@ -164,6 +168,7 @@ class Subject:
 				"version": self.version,
 				"name": self.name,
 				"full_name": self.full_name, 
+				"question_num": self.question_num,
 				"factor": self.factor,
 				"target": self.target,
 				"comment": self.comment,
@@ -197,7 +202,7 @@ class Subject:
 		path = Path(path) if type(path) == str else path
 
 		with path.open("w+") as file:
-			json.dump(self.__dict__(), file)
+			json.dump(self.__dict__(), file, indent=json_indent)
 				
 
 	def list_all(self):
@@ -210,12 +215,16 @@ class Subject:
 	
 
 class Entry:
-	def __init__(self, date, subject_name, correct, wrong, comment: str = ""):
-		# jsondan okurken gelen tarihler str biçiminde olduğundan onları çeviriyoruz
-		self.date = datetime.datetime.strptime(date, date_format) if type(date) == str else date
+	def __init__(self, date, subject_name: str, correct: int, 
+			wrong: int, publisher: str = "", comment: str = ""):
+		# jsondan okurken gelen tarihler str 
+		# biçiminde olduğundan onları çeviriyoruz
+		self.date = datetime.datetime.strptime(date, date_format) \
+				if type(date) == str else date
 		self.subject_name = subject_name
 		self.correct = correct
 		self.wrong = wrong
+		self.publisher = publisher
 		self.comment = comment
 	
 
@@ -225,6 +234,7 @@ class Entry:
 				"subject_name": self.subject_name,
 				"correct": self.correct,
 				"wrong": self.wrong,
+				"publisher": self.publisher,
 				"comment": self.comment
 				}
 		
@@ -243,27 +253,27 @@ default_path = Path("res/data")
 default_structure = \
 		Folder("data", _ver, [
 			Folder("tyt", _ver, [
-				Subject("tr", "tyt turkce", _ver, 0),
-				Subject("mat", "tyt matematik", _ver, 0),
+				Subject("tr", "tyt turkce", _ver, 40, 0),
+				Subject("mat", "tyt matematik", _ver, 40, 0),
 				Folder("sos", _ver, [
-					Subject("tarih", "tyt tarih", _ver, 0),
-					Subject("cografya", "tyt cografya", _ver, 0),
-					Subject("felsefe", "tyt felsefe", _ver, 0),
-					Subject("din", "tyt din", _ver, 0)
+					Subject("tarih", "tyt tarih", _ver, 5, 0),
+					Subject("cografya", "tyt cografya", _ver, 5, 0),
+					Subject("felsefe", "tyt felsefe", _ver, 5, 0),
+					Subject("din", "tyt din", _ver, 5, 0)
 					]),
 				Folder("fen", _ver, [
-					Subject("fizik", "tyt fizik", _ver, 0),
-					Subject("kimya", "tyt kimya", _ver, 0),
-					Subject("bio", "tyt biyoloji", _ver, 0)
+					Subject("fizik", "tyt fizik", _ver, 7, 0),
+					Subject("kimya", "tyt kimya", _ver, 7, 0),
+					Subject("bio", "tyt biyoloji", _ver, 6, 0)
 					])
 				]), 
 
 			Folder("ayt", _ver, [
-				Subject("mat", "ayt matematik", _ver, 0),
+				Subject("mat", "ayt matematik", _ver, 40, 0),
 				Folder("fen", _ver, [
-					Subject("fizik", "ayt fizik", _ver, 0),
-					Subject("kimya", "ayt kimya", _ver, 0),
-					Subject("bio", "ayt biyoloji", _ver, 0)
+					Subject("fizik", "ayt fizik", _ver, 14, 0),
+					Subject("kimya", "ayt kimya", _ver, 13, 0),
+					Subject("bio", "ayt biyoloji", _ver, 13, 0)
 					])
 				])
 			])

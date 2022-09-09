@@ -35,14 +35,13 @@ import readline
  
 # DONE
 # hata sistemini True - False tabanlı yapmamalıydım
+# max ve yayın 
+# json düzenlemesi
 #
 # TODO
-# max ve yayın 
 # her prompt atıldığında database check
-# ls target eklemesi??
 # /ty tab complete hatası
 # database için lock oluşturulmalı
-# json düzenlemesi
 #
 # var olan databasei yok edecek her fonksiyona check konulmalı
 # entry girme fonksiyonları
