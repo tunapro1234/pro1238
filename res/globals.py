@@ -37,3 +37,4 @@ subject_color = colorama.Style.RESET_ALL
 def colorize(string, *colors):
 	return f"{''.join(colors)}{string}{colorama.Style.RESET_ALL}"
 
+database_dependent = [ "pwd", "cd", "ls", "le", "rm", "re", "mkdir", "mksub", "mkent" ]

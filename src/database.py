@@ -61,18 +61,13 @@ class Folder:
 	@classmethod
 	def read(cls, path):
 		path = Path(path) if type(path) == str else path
-		if not path.exists(): return False
 
-		try:
-			with Path(path, "properties.json").open() as file:
-				read = json.load(file)
-		except: return False
+		with Path(path, "properties.json").open() as file:
+			read = json.load(file)
 
 		# sub_elementsı oku ve subject/folder objesine çevir
 		read["sub_elements"] = [(Subject if element_name.endswith(".json") else \
 			Folder).read(Path(path, element_name)) for element_name in read["sub_elements"]]
-		# eğer hata varsa yukarı aktar
-		if False in read["sub_elements"]: return False
 		# data listesini oku ve entry objesine çevir
 		read["data"] = Entry.undict(read["data"])
 		return Folder(**read)
@@ -80,38 +75,25 @@ class Folder:
 
 	def write_self(self, path):
 		path = Path(path) if type(path) == str else path
-		if not path.parent.exists(): return False
-		try:
-			if not path.exists(): os.mkdir(path)
-			with Path(path, "properties.json").open("w+") as file:
-				json.dump(self.__dict__(), file)
-		except:
-			return False
-		return True
+		if not path.exists(): os.mkdir(path)
+		with Path(path, "properties.json").open("w+") as file:
+			json.dump(self.__dict__(), file)
 
 
 	def write(self, path):
-		if not os.path.exists(Path(path).parent): return False
-		if not self.write_self(path): return False
+		self.write_self(path)
 		# classmethod olan folder read recursive okuyor ama recursive yazmıyor
 		# o yüzden bu fonksiyona ihtiyacımız var ama read_all çok da gerekli değil
 		for element in self.sub_elements:
 			write_name = element.name
 			if type(element) == Subject: 
 				write_name += ".json"
-			if not element.write(Path(path, write_name)): 
-				return False
-		return True
+
+			element.write(Path(path, write_name))
 
 
 	def remove_element(self, element):
-		if element not in self.sub_elements:
-			return False
-		try:
-			self.sub_elements.remove(element)
-		except:
-			return False
-		return True
+		self.sub_elements.remove(element)
 
 
 	def list_all(self):
@@ -144,20 +126,17 @@ class Folder:
 			# Subjectin find_by_name fonksiyonu yok,
 			# eğer folder/subject/subject tarzı bir şey yapılmaya 
 			# çalışılırsa hata veriyor
-			if type(nbase) == Subject: return False
 			nbase = nbase.find_by_name(name)
-			if nbase == False: return False
 		return nbase
 
 	def find_by_name(self, name):
 		if name == ".": return self
 		if name == "..": 
-			if self.parent is not None and type(self.parent) != str:
-				return self.parent
-			else: return False
+			return self.parent
 
 		arr = [i for i in self.sub_elements if i.name == name]
-		if len(arr) != 1: return False
+		if len(arr) != 1:
+			raise Exception("no such file or directory")
 		return arr[0]
 
 	def add_entry(*args, **kwargs):
@@ -195,12 +174,9 @@ class Subject:
 	@classmethod
 	def read(cls, path):
 		path = Path(path) if type(path) == str else path
-		if not path.exists(): return False
 		
-		try:
-			with path.open() as file:
-				read = json.load(file)
-		except: return False
+		with path.open() as file:
+			read = json.load(file)
 		# sub_elementsı oku ve subject/folder objesine çevir
 		read["data"] = Entry.undict(read["data"])
 	
@@ -219,14 +195,9 @@ class Subject:
 
 	def write(self, path):
 		path = Path(path) if type(path) == str else path
-		if not path.parent.exists(): return False
 
-		try:
-			with path.open("w+") as file:
-				json.dump(self.__dict__(), file)
-		except:
-			return False
-		return True
+		with path.open("w+") as file:
+			json.dump(self.__dict__(), file)
 				
 
 	def list_all(self):
@@ -272,11 +243,11 @@ default_path = Path("res/data")
 default_structure = \
 		Folder("data", _ver, [
 			Folder("tyt", _ver, [
-				Subject("tr", "tyt türkçe", _ver, 0),
+				Subject("tr", "tyt turkce", _ver, 0),
 				Subject("mat", "tyt matematik", _ver, 0),
 				Folder("sos", _ver, [
 					Subject("tarih", "tyt tarih", _ver, 0),
-					Subject("coğrafya", "tyt coğrafya", _ver, 0),
+					Subject("cografya", "tyt cografya", _ver, 0),
 					Subject("felsefe", "tyt felsefe", _ver, 0),
 					Subject("din", "tyt din", _ver, 0)
 					]),
@@ -325,7 +296,6 @@ def read_database(path = default_path):
 	# Eğer database okumada sıkıntı 
 	# çıktıysa sıkıntıyı yukarıya ilet
 	database = Folder.read(path)
-	if database == False: return False
 
 	# Database okunduysa database 
 	# oluşturmak için gerekli işlemleri yap
@@ -334,6 +304,9 @@ def read_database(path = default_path):
 
 
 def write_database(main_folder: Folder = default_structure, path = default_path):
+	# eğer database oluşturulmaya çalışılan klasör 
+	# yoksa oluştur varsa problem yaratma
+	os.makedirs(path, exist_ok=True)
 	return main_folder.write(path)
 
 

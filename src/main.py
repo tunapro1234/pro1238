@@ -34,14 +34,16 @@ import readline
 
  
 # DONE
+# hata sistemini True - False tabanlı yapmamalıydım
 #
 # TODO
-# ls target eklemesi
+# max ve yayın 
+# her prompt atıldığında database check
+# ls target eklemesi??
 # /ty tab complete hatası
 # database için lock oluşturulmalı
 # json düzenlemesi
 #
-# hata sistemini True - False tabanlı yapmamalıydım
 # var olan databasei yok edecek her fonksiyona check konulmalı
 # entry girme fonksiyonları
 #
@@ -75,7 +77,7 @@ class Environment:
 	def curdir(self, value):
 		if type(value) not in [Subject, Folder, type(None)]:
 			raise Exception(\
-				"Current directory must be a Folder or a Subject")
+				"current directory must be a Folder or a Subject")
 
 		if value is None:
 			self.__curdir = self.root
@@ -109,14 +111,14 @@ class Environment:
 
 	def get_from_path(self, path):
 		# Database yoksa sal
-		if self.curdir is None or self.root is None: return False
+		if self.curdir is None or self.root is None: 
+			raise Exception("no database found")
 		# - işareti son girilen klasöre uçuracak
 		if path == "-":
 			# Eğer daha öncesinde açılmış bir klasör yoksa
 			if self.__last_path is None: 
 				# hata ver ve çık
-				print("last_path not set")
-				return False
+				raise Exception("last_path not set")
 			# Hedefi önceki klasörle değiştir
 			path = self.__last_path
 		# Eğer verilen string / ile başlıyorsa kullanacağımız
@@ -126,12 +128,10 @@ class Environment:
 	def remove(self, element):
 		# Root klasördeysek
 		if element.parent == element:
-			print("{glb.fail} cannot delete root folder")
-			return False
+			raise Exception("cannot delete root folder")
 
-		if element.parent.remove_element(element) == False:
-			return False
-		return self.root.write(path=db.default_path)
+		element.parent.remove_element(element)
+		self.root.write(path=db.default_path)
 
 
 def parser(env, input_text):
@@ -141,21 +141,31 @@ def parser(env, input_text):
 	# şimdilik sadece bu operatörü test için geliştiriyorum
 	if "&&" in input_text:
 		for command in input_text.split("&&"):
-			if parser(env, command) == False: return False
-		return True
+			parser(env, command)
+		return
 
 	# boşluklardan böl argüman olarak yedir
 	argv = [i for i in input_text.split(" ") if i != ""]
 
 	# eğer "" girilirse boşver
-	if len(argv) == 0: return True
+	if len(argv) == 0: return
+
 	# Eğer çalıştırılmaya çalışılan fonksiyon bizim 
 	# yazdığımız fonksiyonlardan değilse kabul etme
 	elif argv[0] not in glb.keywords:
-		print(f"command not found: {input_text}")
-		return False
-	# fonksiyonu çağır
-	return eval(f"cmd._{argv[0]}(env, argv)")
+		return print(f"{glb.fail} command not found: {input_text}")
+	
+	# database yoksa ve databasee ihtiyacı 
+	# olan bir fonksiyon çağırmaya çalışıyorsak
+	if argv[0] in glb.database_dependent and env.root is None:
+		return print(f"{glb.warn} database necessary for command: {argv[0]}")
+
+	try:
+		# fonksiyonu çağır
+		eval(f"cmd._{argv[0]}(env, argv)")
+	except Exception as e:
+		##!##
+		print(f"{glb.fail} {argv[0]}: {e}")
 
 
 def check_if_path(env, path):
@@ -163,7 +173,10 @@ def check_if_path(env, path):
 	# eğer ana fonksiyon False veriyorsa biz de False veriyoruz
 	# ama eğer ana fonksiyon obje döndürüyorsa path parsing
 	# işlemi başarılı olmuş demektir
-	return False if env.get_from_path(path) == False else True
+	try:
+		env.get_from_path(path)
+	except: return False
+	else: return True
 
 
 def complete_path(env, word):
@@ -250,9 +263,10 @@ def _main():
 	# completer fonksiyonu ayarla
 	# readline.set_completer(completer_wrapper(None, None))
 	
-	# Eğer database okuyabilmişsek yolla bakalım
-	database = db.read_database()
-	if database == False:
+	try:
+		# Eğer database okuyabilmişsek yolla bakalım
+		database = db.read_database()
+	except:
 		print(f"{glb.info} No database found...")
 		database = None
 
@@ -260,21 +274,22 @@ def _main():
 	env = Environment(root=database)
 
 	while True:
+		# completer fonksiyonu ayarla
+		readline.set_completer(completer_wrapper(env))
+		# eğer database okunmuşsa içinde 
+		# bulunduğumuz klasörü prompta da yazdır
+		prompt = f"tunapro1238]{glb.clean} >> " if env.curdir is None \
+				else f"tunapro1238 {env.curdir.name}]{glb.clean} >> "
 		try:
-			# completer fonksiyonu ayarla
-			readline.set_completer(completer_wrapper(env))
-			# eğer database okunmuşsa içinde 
-			# bulunduğumuz klasörü prompta da yazdır
-			prompt = f"tunapro1238]{glb.clean} >> " if env.curdir is None \
-					else f"tunapro1238 {env.curdir.name}]{glb.clean} >> "
 			# kullanıcının girdiği inputu parsera yolla
-			rv = parser(env, input(prompt))
+			parser(env, input(prompt))
 
 		except KeyboardInterrupt: 
 			# aslında input olarak hiçbir şey girilmemişse 
 			# ctrl c yapıldığında programdan çıkış yapabilmeyi
 			# çok isterdim ama nasıl yapacağımı bulamadım :-(
 			print()
+
 
 
 def _main_tester(input_text=""):

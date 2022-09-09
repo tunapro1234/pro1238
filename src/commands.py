@@ -11,20 +11,18 @@ def _help(*args, **kwargs):
 	return True
 
 def _reconfigure(env, *args, **kwargs): 
-	raise NotImplemented
+	raise Exception("not implemented")
 
 def _init(env, *args, **kwargs): 
-	if (rv := db.write_database()) == True:
-		print("Database created successfully.")
+	db.write_database()
+	print(f"{glb.info} database created successfully")
 
 	# Yeni databasei oku
 	env.reset(db.read_database())
-	return rv
 
 
 def _pwd(env, *args, **kwargs):
 	print(env.get_path(env.curdir))
-	return True
 
 
 def _cd(env, argv):
@@ -34,8 +32,7 @@ def _cd(env, argv):
 	target = [i for i in argv if (not i.startswith("-") and i != argv[0]) or i == "-"]
 	# Birden fazla klasör verildiyse hata ver
 	if len(target) > 1: 
-		print("Too many arguments...")
-		return False
+		raise Exception("too many arguments")
 	# Eğer sadece cd yazıldıysa root klasöre geri dön
 	elif len(target) == 0:
 		target.append("/")
@@ -43,13 +40,12 @@ def _cd(env, argv):
 	newdir = env.get_from_path(target)
 
 	if newdir == False: 
-		print(f"No such file or directory: {target}")
-		return False
+		raise Exception(f"no such file or directory: {target}")
 	elif type(newdir) != Folder:
-		print(f"Not a directory: {target}")
-		return False
+		raise Exception(f"not a directory: {target}")
+
 	env.curdir = newdir
-	return True
+
 
 def ls_recursive(target: Folder, tab=" "):
 	# belirli bşr klasör altındaki tüm klasörleri görmemizi sağlıyor
@@ -91,9 +87,6 @@ def _ls(env, argv=None, __dir=None):
 		targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
 		# eğer hedef varsa (ls target gibi)
 		if len(targets) > 0:
-			# hedeflerden herhangi birinin hata verip 
-			# vermediği bilgisinin tutulduğu değişken
-			rv = True
 			# her bir hedef klasör için
 			for i, target in enumerate(targets):
 				# eğer birden fazla hedef varsa hangi hedefi
@@ -101,29 +94,26 @@ def _ls(env, argv=None, __dir=None):
 				if len(targets) > 1:
 					print(f"{target}: ")
 
-				# target stringini target objesine çevirip
-				# ls fonksiyonuna __dir olarak veriyoruz ve 
-				# böylece recursion ile çağırıldığını anlıyor
-				target_object = env.get_from_path(target)
+				# eğer recursive lslerden herhangi biri 
+				# false döndürürse biz de false döndüreceğiz
+				try:
+					# target stringini target objesine çevirip
+					# ls fonksiyonuna __dir olarak veriyoruz ve 
+					# böylece recursion ile çağırıldığını anlıyor
+					target_object = env.get_from_path(target)
 
-				# eğer path bulunamadıysa
-				if target_object == False:
-					print(f"{glb.fail} {argv[0]}: no such file or directory: {target}")
-					# Herhangi bir targetta hata çıktığından fonksiyon
-					# false döndürecek
-					rv = False
-				else:
-					# eğer recursive lslerden herhangi biri 
-					# false döndürürse biz de false döndüreceğiz
-					if _ls(env, argv, __dir=target_object) == False:
-						rv = False
+					_ls(env, argv, __dir=target_object)
+
+				except Exception as e:
+					##!##
+					print(f"{glb.fail} {argv[0]}: {e}")
 
 				# son satırda ek boşluk bırakmasın ama 
 				# onun dışında aradaboşluk bıraksın
 				if i + 1 != len(targets): print()
 			# target varsa recursionla her şeyi hallettik,
 			# artık çıkabiliriz
-			return rv
+			return
 		# eğer sadece ls girildiyse, target 
 		# olmuyor ve recursion da olmuyor
 		# ve işleme direkt bu fonksiyondan devam ediyoruz
@@ -156,30 +146,25 @@ def _ls(env, argv=None, __dir=None):
 	else: output = "  ".join(output)
 	# yapıştır gitsin
 	print(output)
-	return True
 
 
 def _le(env, argv):
-	print(f"{glb.warn} {argv[0]} IMPLEMENTATION NOT COMPLETED.")
+	print(f"{glb.warn} {argv[0]} implementation not completed")
 	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
 
 	if len(targets) == 0: 
-		print(f"{glb.fail} {argv[0]}: missing target.")
-		return False
+		raise Exception("missing target")
 	elif len(targets) > 1:
-		print(f"{glb.fail} {argv[0]}: multiple targets not supported.")
-		return False
+		raise Exception("multiple targets not supported")
 
 	target = env.get_from_path(targets[0])
-	if target == False: 
-		print(f"{glb.fail} {argv[0]}: no such file or directory.")
-		return False
+	# data yoksa boşuna boşluk bırakma
+	if len(target.data) == 0: return
 
 	print(*[ \
 			f"{i}. date: {e.get_str_date()}; " + \
 			f"\tD: {e.correct}, \tY: {e.wrong}, \tN: {e.correct - e.wrong/4}".expandtabs(6) \
 			for i, e in enumerate(target.data)], sep="\n")
-	return True
 
 
 def _rm(env, argv):
@@ -187,69 +172,58 @@ def _rm(env, argv):
 	d_arguments = [i for i in argv if i.startswith("-")]
 	options = "".join(d_arguments).replace("-", "")
 
-	rv = True
 	current_path = env.get_path(env.curdir)
 	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
 	for target in targets:
-		target_object = env.get_from_path(target)
+		try:
+			target_object = env.get_from_path(target)
 
-		if target_object == False:
-			print(f"{glb.fail} {argv[0]}: no such file or directory: {target}")
-			rv = False
-		else:
 			target_path = env.get_path(target)		
 			if target_path in current_path:
-				print("{glb.fail} {argv[0]}: trying to delete a parent directory to current one.")
-				rv = False
+				raise Exception("trying to delete a parent directory to current one")
 			else:
 				_type = "Subject" if type(target_object) == Subject else "Folder"
 				print(f"{glb.warn} {argv[0]}: remove {_type} {target}? ", end="")
 				if input() == "y":
-					rm_rv = env.remove(target_object)
-					if rm_rv: print(f"{glb.info} {argv[0]}: deleted {target_path}")
-					else: print(rm_rv)
-					
+					env.remove(target_object)
+					print(f"{glb.info} {argv[0]}: deleted {target_path}")
 				else:
-					print(f"{glb.info} {argv[0]}: canceled.")
+					print(f"{glb.info} {argv[0]}: canceled")
+
+		except Exception as e:
+			##!##
+			print(f"{glb.fail} {argv[0]}: {e}")
 
 	if len(targets) == 0:
-		print("{glb.fail} {argv[0]}: missing target")
-		return False
-	return rv
+		raise Exception("missing target")
 
 
 
 def _re(env, argv):
-	raise NotImplemented
+	raise Exception("not implemented")
 
 
 def _mkdir(env, argv):
-	raise NotImplemented
+	raise Exception("not implemented")
 
 
 def _mksub(env, argv):
-	raise NotImplemented
+	raise Exception("not implemented")
 
 
 def _mkent(env, argv):
-	print(f"{glb.warn} {argv[0]}: IMPLEMENTATION NOT COMPLETED.")
+	print(f"{glb.warn} {argv[0]}: implementation not completed")
 	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
 
 	if len(targets) == 0: 
-		print(f"{glb.fail} {argv[0]}: missing target.")
-		return False
+		raise Exception("missing target.")
 	elif len(targets) > 1:
-		print(f"{glb.fail} {argv[0]}: multiple targets not supported.")
-		return False
+		raise Exception("multiple targets not supported")
 
 	target = env.get_from_path(targets[0])
-	if target == False: 
-		print(f"{glb.fail} {argv[0]}: no such file or directory.")
-		return False
 
 	get_entry_data(target)
 	db.write_database(env.root)
-	return True
 
 
 def get_entry_data(target, date=None):
