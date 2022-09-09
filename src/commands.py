@@ -148,20 +148,24 @@ def _ls(env, argv=None):
 
 
 def _le(env, argv):
-	print(glb.warn + f"{argv[0]} IMPLEMENTATION NOT COMPLETED.")
+	print(f"{glb.warn} {argv[0]} IMPLEMENTATION NOT COMPLETED.")
 	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
 
 	if len(targets) == 0: 
-		print(glb.fail + "{argv[0]}: missing target.")
+		print(f"{glb.fail} {argv[0]}: missing target.")
 		return False
 	elif len(targets) > 1:
-		print(glb.fail + "{argv[0]}: multiple targets not supported.")
+		print(f"{glb.fail} {argv[0]}: multiple targets not supported.")
 		return False
 
-	target = target[0]
+	target = env.get_from_path(targets[0])
+	if target == False: 
+		print(f"{glb.fail} {argv[0]}: no such file or directory.")
+		return False
+
 	print(*[ \
 			f"{i}. date: {e.get_str_date()}; " + \
-			"D: {e.correct}, Y: {e.wrong}, N: {e.correct - e.wrong/4}" \
+			f"\tD: {e.correct}, \tY: {e.wrong}, \tN: {e.correct - e.wrong/4}".expandtabs(6) \
 			for i, e in enumerate(target.data)], sep="\n")
 	return True
 
@@ -244,11 +248,13 @@ def get_entry_data(target, date=None):
 		for element in target.sub_elements:
 			rv = get_entry_data(element)
 			if rv == False: 
-				rv1 = ask_data(target)
-				if rv1 == False: return False
-				correct, wrong = rv1
+				try:
+					correct, wrong = ask_data(target)
+				except: 
+					print()
+					return False
 				break
-
+			
 			else:
 				correct += rv[0] 
 				wrong += rv[1]
@@ -258,9 +264,11 @@ def get_entry_data(target, date=None):
 		return correct, wrong
 
 	elif type(target) == Subject:
-		rv = ask_data(target)
-		if rv == False: return False
-		correct, wrong = rv
+		try:
+			correct, wrong = ask_data(target)
+		except: 
+			print()
+			return False
 	
 		# garanti olsun diye keyword arg olarak girdim
 		target.add_entry(date=date, correct=correct, wrong=wrong)
@@ -272,9 +280,7 @@ def get_entry_data(target, date=None):
 
 def ask_data(target, state=None):
 	if state is None:
-		rv = ask_data(target, 0), ask_data(target, 1)
-		if False in rv: return False
-		return rv
+		return ask_data(target, 0), ask_data(target, 1)
 
 	# eğer state 0 sa doğru sayısını iste 
 	# değilse yanlış sayısını iste
@@ -284,9 +290,9 @@ def ask_data(target, state=None):
 	inp = input()
 
 	# eğer bir şey girilmemişse hata ver
-	if inp.strip() == "": return False
+	if inp.strip() == "": raise Exception("Skipped")
 	# eğer sayı girilmemişse hata ver
-	if inp.isnumeric() != True: return False
+	if inp.isnumeric() != True: raise Exception("Input Error")
 	return int(inp)
 
 
