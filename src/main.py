@@ -43,11 +43,13 @@ import readline
 # environment
 # ls -l
 # ls -lr
-#
-# TODO
-# var olan databasei yok edecek her fonksiyona check konulmalı
 # pwd
 #
+# TODO
+# database için lock oluşturulmalı
+#
+# var olan databasei yok edecek her fonksiyona check konulmalı
+# entry girme fonksiyonları
 # DATABASE:
 #	check_properties()
 #	_add_entry fonksiyonları
@@ -60,8 +62,86 @@ class Environment:
 	# programla ilgili genel global 
 	# değişkenlerin tutulacağı değişken classı
 	def __init__(self, root=None, curdir=None):
+		self.__current_path = None
+		self.__last_path = None
+
 		self.root = root
-		self.curdir = root if curdir is None else None
+		self.curdir = curdir
+
+
+	def reset(self, new_database):
+		self.__current_path = None
+		self.__last_path = None
+
+		self.root = new_database
+		self.curdir = self.root
+
+	@property
+	def curdir(self):
+		return self.__curdir	
+
+
+	@curdir.setter
+	def curdir(self, value):
+		if type(value) not in [Subject, Folder, type(None)]:
+			raise Exception(\
+				"Current directory must be a Folder or a Subject")
+
+		if value is None:
+			self.__curdir = self.root
+			self.__last_path = self.__current_path
+			self.__current_path = None if self.root is None else "/"
+		else:
+			self.__curdir = value
+			self.__last_path = self.__current_path
+			self.__current_path = self.__get_path(value)
+
+		
+	def __get_path(self, target, internal=True):
+		path = []
+		current = self.get_from_path(target) \
+				if type(target) == str else target
+
+		# eğer bulunduğumuz klasörün pathini istiyorsak
+		# o değeri direkt kaydettiğimizden hesaplamakla uğraşma
+		if not internal and current == self.curdir:
+			return self.__current_path
+		
+		while current != self.root:
+			path = [current.name] + path
+			current = current.parent
+		return "/" + "/".join(path)
+
+
+	def get_path(self, *args, **kwargs):
+		return self.__get_path(*args, **kwargs, internal=False)
+
+
+	def get_from_path(self, path):
+		# Database yoksa sal
+		if self.curdir is None or self.root is None: return False
+		# - işareti son girilen klasöre uçuracak
+		if path == "-":
+			# Eğer daha öncesinde açılmış bir klasör yoksa
+			if self.__last_path is None: 
+				# hata ver ve çık
+				print("last_path not set")
+				return False
+			# Hedefi önceki klasörle değiştir
+			path = self.__last_path
+		# Eğer verilen string / ile başlıyorsa kullanacağımız
+		# folderı root folder olarak ayarla
+		return (self.root if path.startswith("/") else self.curdir).find_by_path(path)
+
+	def remove(self, element):
+		# Root klasördeysek
+		if element.parent == element:
+			print("Cannot delete root folder")
+			return False
+
+		if element.parent.remove_element(element) == False:
+			return False
+		return self.root.write(path=db.default_path)
 
 
 def parser(env, input_text):
@@ -88,17 +168,12 @@ def parser(env, input_text):
 	return eval(f"cmd._{argv[0]}(env, argv)")
 
 
-def check_if_path(env, text):
-	# Ufak bir wrapper fonksiyon
-	if env.curdir is None or env.root is None: return False
-	# Eğer verilen string / ile başlıyorsa kullanacağımız
-	# folderı root folder olarak ayarla
-	base = env.root if text.startswith("/") else env.curdir
-	# Ana fonksiyon Folder.find_by_path
+def check_if_path(env, path):
+	# Ana fonksiyon Folder.find_by_path() ve Environment.get_from_path()
 	# eğer ana fonksiyon False veriyorsa biz de False veriyoruz
 	# ama eğer ana fonksiyon obje döndürüyorsa path parsing
 	# işlemi başarılı olmuş demektir
-	return False if base.find_by_path(text) == False else True
+	return False if env.get_from_path(path) == False else True
 
 
 def complete_path(env, word):
@@ -110,29 +185,36 @@ def complete_path(env, word):
 
 	# her bir / harfinden böl, // görürsen tek bir tane say.
 	names = [i for i in word.split("/") if i != ""]
-	# eğer verilen pathin sonunda / yoksa son kelimeyi 
-	# subject/folder olarak algılama
-	names = names if word.endswith("/") else names[:-1]
+	# sadece "/" yazılmışsa
+	if word == "/":
+		nbase = env.root
+		beg = "/"
 
-	# recursion gibi bi şey
-	nbase = base
-	for name in names:
-		# Subjectin find_by_name fonksiyonu yok,
-		# eğer folder/subject/subject tarzı bir şey yapılmaya 
-		# çalışılırsa hata veriyor
-		if type(nbase) == Subject: return []
-		# geçen seferki folder içinden 
-		# gelecek elemanı nbase değişkenine ver
-		nbase = nbase.find_by_name(name)
-		# eleman isminden bulunamazsa boşver
-		if nbase == False: return []
+	else:
+		# eğer verilen pathin sonunda / yoksa son kelimeyi 
+		# subject/folder olarak algılama
+		names = names if word.endswith("/") else names[:-1]
 
-	# son kelimeyi sil
-	beg = "/".join(word.split("/")[:-1])
-	# eğer verilen string tek kelimeyse yukarıdaki satırda
-	# son kelimeyi sildiğimizden sonsuz / koyma döngüsüne
-	# girmemesi için
-	beg = beg if beg == "" else beg + "/"
+		# recursion gibi bi şey
+		nbase = base
+		for name in names:
+			# Subjectin find_by_name fonksiyonu yok,
+			# eğer folder/subject/subject tarzı bir şey yapılmaya 
+			# çalışılırsa hata veriyor
+			if type(nbase) == Subject: return []
+			# geçen seferki folder içinden 
+			# gelecek elemanı nbase değişkenine ver
+			nbase = nbase.find_by_name(name)
+			# eleman isminden bulunamazsa boşver
+			if nbase == False: return []
+
+		# son kelimeyi sil
+		beg = "/".join(word.split("/")[:-1])
+		# eğer verilen string tek kelimeyse yukarıdaki satırda
+		# son kelimeyi sildiğimizden sonsuz / koyma döngüsüne
+		# girmemesi için
+		beg = beg if beg == "" else beg + "/"
+
 	# son eleman yerine olabilecek seçenekleri yerleştir
 	final = []
 	for element in nbase.sub_elements:
@@ -183,9 +265,6 @@ def _main():
 	if database == False:
 		print(f"{glb.info} No database found...")
 		database = None
-	else:
-		# database okunmuşsa gerekli ayarlamaları yap
-		db.meet_your_parents(database)
 
 	# environment variableları initleniyor
 	env = Environment(root=database)

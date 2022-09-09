@@ -96,10 +96,21 @@ class Folder:
 		# classmethod olan folder read recursive okuyor ama recursive yazmıyor
 		# o yüzden bu fonksiyona ihtiyacımız var ama read_all çok da gerekli değil
 		for element in self.sub_elements:
+			write_name = element.name
 			if type(element) == Subject: 
-				element.name += ".json"
-			if not element.write(Path(path, element.name)): 
+				write_name += ".json"
+			if not element.write(Path(path, write_name)): 
 				return False
+		return True
+
+
+	def remove_element(self, element):
+		if element not in self.sub_elements:
+			return False
+		try:
+			self.sub_elements.remove(element)
+		except:
+			return False
 		return True
 
 
@@ -192,12 +203,17 @@ class Subject:
 		except: return False
 		# sub_elementsı oku ve subject/folder objesine çevir
 		read["data"] = Entry.undict(read["data"])
+	
+
 		# Program içinde Folderın sub elements listesindeki objelerin 
 		# tipini görebildiğimiz için sonunda .json gibi bir uzantı olmasına
 		# ihtiyacımız yok. O yüzden json uzantısını kaldırıyorum.
 		# Bunun bize ne gibi bir avantajı olur bilmiyorum ama 
 		# en başta böyle yapmışım o yüzden değiştirmekle uğraşmayacağım
-		read["name"] = ".".join(read["name"].split(".")[:-1])
+		#read["name"] = ".".join(read["name"].split(".")[:-1])
+		# Şimdi şöyle bir ufak problem var, problemi bilmiyorum ama bu 
+		# satırı kapatmam gerekiyor
+		
 		return Subject(**read)
 
 
@@ -289,7 +305,15 @@ def add_entry(self, path, date = None, *args, **kwargs):
 
 
 def read_database(path = default_path):
-	return Folder.read(path)
+	# Eğer database okumada sıkıntı 
+	# çıktıysa sıkıntıyı yukarıya ilet
+	if (database := Folder.read(path)) == False:
+		return False
+
+	# Database okunduysa database 
+	# oluşturmak için gerekli işlemleri yap
+	meet_your_parents(database)
+	return database
 
 
 def write_database(main_folder: Folder = default_structure, path = default_path):

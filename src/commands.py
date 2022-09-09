@@ -1,5 +1,5 @@
 from src.database import Folder, Subject, Entry
-import src.database as ldb
+import src.database as db
 import res.globals as glb
 import os
 
@@ -13,27 +13,24 @@ def _reconfigure(env, *args, **kwargs):
 	raise NotImplemented
 
 def _init(env, *args, **kwargs): 
-	if (rv := ldb.write_database()) == True:
+	if (rv := db.write_database()) == True:
 		print("Database created successfully.")
+
+	# Yeni databasei oku
+	env.reset(db.read_database())
 	return rv
 
 
 def _pwd(env, *args, **kwargs):
-	path = []
-	current = env.curdir
-	while current != env.root:
-		path = [current.name] + path
-		current = current.parent
-
-	print("/" + "/".join(path))
+	print(env.get_path(env.curdir))
 	return True
 
 
 def _cd(env, argv):
 	argv = [] if argv is None else argv
-	d_arguments = [i for i in argv if i.startswith("-")]
+	d_arguments = [i for i in argv if i.startswith("-") and i != "-"]
 
-	target = [i for i in argv if not i.startswith("-") and i != argv[0]]
+	target = [i for i in argv if (not i.startswith("-") and i != argv[0]) or i == "-"]
 	# Birden fazla klasör verildiyse hata ver
 	if len(target) > 1: 
 		print("Too many arguments...")
@@ -42,9 +39,7 @@ def _cd(env, argv):
 	elif len(target) == 0:
 		target.append("/")
 	target = target[0]
-
-	newdir = (env.root if target.startswith("/") \
-			else env.curdir).find_by_path(target)
+	newdir = env.get_from_path(target)
 
 	if newdir == False: 
 		print(f"No such file or directory: {target}")
@@ -105,9 +100,8 @@ def _ls(env, argv=None):
 			filtered_argv = [argv[0]] + d_arguments
 			# target stringini target objesine çevirip
 			# ls fonksiyonuna selected olarak veriyoruz
-			target_object = (env.root if target.startswith("/") \
-					else env.curdir).find_by_path(target)
-		
+			target_object = env.get_from_path(target)
+
 			# eğer path bulunamadıysa
 			if target_object == False:
 				print(f"No such file or directory: {target}")
@@ -142,11 +136,11 @@ def _ls(env, argv=None):
 	# eğer liste halinde isteniyorsa alt alta sırala
 	if "l" in options: 
 		output = "\n".join([f"{i}. {j}" for i, j in enumerate(output)] \
-				+ [f"total {len(output)} files"])
+				+ [f"total {len(output)} objects"])
 	# recursive güzel gözüksün diye alt alta yazdır
 	elif "r" in options: output = "\n".join(output)
 	# liste değilse boşluk yeterli
-	else: output = " ".join(output)
+	else: output = "  ".join(output)
 	# yapıştır gitsin
 	print(output)
 	return True
@@ -157,7 +151,41 @@ def _le(env, argv):
 
 
 def _rm(env, argv):
-	raise NotImplemented
+	argv = [] if argv is None else argv
+	d_arguments = [i for i in argv if i.startswith("-")]
+	options = "".join(d_arguments).replace("-", "")
+
+	rv = True
+	current_path = env.get_path(env.curdir)
+	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
+	for target in targets:
+		target_object = env.get_from_path(target)
+
+		if target_object == False:
+			print(f"No such file or directory: {target}")
+			rv = False
+		else:
+			target_path = env.get_path(target)		
+			if target_path in current_path:
+				print("Trying to delete a parent directory to current one.")
+				rv = False
+			else:
+				_type = "Subject" if type(target_object) == Subject else "Folder"
+				print(f"remove {_type} {target}? ", end="")
+				if input() == "y":
+					rm_rv = env.remove(target_object)
+					if rm_rv: print(f"deleted {target_path}")
+					else: print(rm_rv)
+					
+				else:
+					print(f"canceled.")
+
+	if len(targets) == 0:
+		print("rm: missing target")
+		rv = False
+
+	return rv
+
 
 
 def _re(env, argv):
