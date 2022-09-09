@@ -236,7 +236,7 @@ class Subject:
 	def add_entry(*args, **kwargs):
 		return add_entry(*args, **kwargs)
 
-
+	
 
 class Entry:
 	def __init__(self, date, subject_name, correct, wrong, comment: str = ""):
@@ -250,13 +250,15 @@ class Entry:
 
 	def __dict__(self):
 		return {
-				"date": self.date.strftime(date_format),
+				"date": self.get_str_date(),
 				"subject_name": self.subject_name,
 				"correct": self.correct,
 				"wrong": self.wrong,
 				"comment": self.comment
 				}
 		
+	def get_str_date(self):
+		return self.date.strftime(date_format)
 
 	@classmethod
 	# str list to entry list
@@ -297,18 +299,33 @@ default_structure = \
 
 
 
-def add_entry(self, path, date = None, *args, **kwargs):
+def add_entry(self, *args, path = default_path, date = None, **kwargs):
 	date = datetime.datetime.now() if date is None else date
-	self.data.append(Entry(date, self.name, *args, **kwargs))
-	if not self.write(): return False
+	self.data.append(Entry(date=date, subject_name=self.name, *args, **kwargs))
+# 	if not self.write(): return False
 	return date
+
+
+def find_entry(self, date):
+	# Date objelerini direkt olarak jsona kaydedemediğimiz 
+	# için jsona kaydederken stringe çeviriyoruz. Eğer date 
+	# parametresi str olarak verilmişse date objesine dönüştür
+	# Çünkü elimizdeki subject/folder ın içindeki datada 
+	# string olarak kayıtlı değil, datetime objesi
+	date = datetime.datetime.strptime(date, date_format) \
+			if type(date) == str else date
+	
+	index = [i for i, e in enumerate(self.data) if e.date == date] 
+	if len(index) == 1:
+		return index[0]
+	return False
 
 
 def read_database(path = default_path):
 	# Eğer database okumada sıkıntı 
 	# çıktıysa sıkıntıyı yukarıya ilet
-	if (database := Folder.read(path)) == False:
-		return False
+	database = Folder.read(path)
+	if database == False: return False
 
 	# Database okunduysa database 
 	# oluşturmak için gerekli işlemleri yap

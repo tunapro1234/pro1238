@@ -1,1 +1,1 @@
-{"version": "0.0.0", "name": "tyt", "comment": "", "sub_elements": ["tr.json", "mat.json", "sos", "fen"], "data": []}
+{"version": "0.0.0", "name": "tyt", "comment": "", "sub_elements": ["tr.json", "mat.json", "sos", "fen"], "data": [{"date": "09/09/22 14:43:28.594944", "subject_name": "tyt", "correct": 89, "wrong": 26, "comment": ""}]}

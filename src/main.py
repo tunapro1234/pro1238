@@ -46,6 +46,7 @@ import readline
 # pwd
 #
 # TODO
+# /ty tab complete hatası
 # database için lock oluşturulmalı
 #
 # var olan databasei yok edecek her fonksiyona check konulmalı
