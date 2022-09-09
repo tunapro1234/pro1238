@@ -77,58 +77,70 @@ def colorize_element(element):
 		return glb.colorize(element, glb.folder_color)
 	else: raise Exception
 
-def _ls(env, argv=None):
+def _ls(env, argv=None, __dir=None):
 	# klasik default argüman şeyleri
 	argv = [] if argv is None else argv
 	d_arguments = [i for i in argv if i.startswith("-")]
 	# Bu değişkenin ileride düzenlenmesi gerekebilir
 	options = "".join(d_arguments).replace("-", "")
 
-	# eğer klasör yerine dosyayı lslemeye çalışırsak
-	if type(env.curdir) == Subject:
-		print("Cannot ls into Subject")
-		return False
+	### Recursionı ayarlayan kısım
+	# eğer fonksiyon recursion ile çağırılmamışsa
+	if __dir is None:
+		# hedefleri belirle
+		targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
+		# eğer hedef varsa (ls target gibi)
+		if len(targets) > 0:
+			# hedeflerden herhangi birinin hata verip 
+			# vermediği bilgisinin tutulduğu değişken
+			rv = True
+			# her bir hedef klasör için
+			for i, target in enumerate(targets):
+				# eğer birden fazla hedef varsa hangi hedefi
+				# yazdırdığını belirt
+				if len(targets) > 1:
+					print(f"{target}: ")
 
-	rv = True
-	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
-	if len(targets) > 0:
-		for i, target in enumerate(targets):
-			if len(targets) > 1:
-				print(f"{target}: ")
+				# target stringini target objesine çevirip
+				# ls fonksiyonuna __dir olarak veriyoruz ve 
+				# böylece recursion ile çağırıldığını anlıyor
+				target_object = env.get_from_path(target)
 
-			# sonsuz döngüye girmemek için 
-			# argvden targetları siliyoruz
-			filtered_argv = [argv[0]] + d_arguments
-			# target stringini target objesine çevirip
-			# ls fonksiyonuna selected olarak veriyoruz
-			target_object = env.get_from_path(target)
-
-			# eğer path bulunamadıysa
-			if target_object == False:
-				print(f"No such file or directory: {target}")
-			else:
-				curdir = env.curdir
-				env.curdir = target_object
-				# eğer recursive lslerden herhangi biri 
-				# false döndürürse biz de false döndüreceğiz
-				if _ls(env, filtered_argv) == False:
+				# eğer path bulunamadıysa
+				if target_object == False:
+					print(f"{glb.fail} {argv[0]}: no such file or directory: {target}")
+					# Herhangi bir targetta hata çıktığından fonksiyon
+					# false döndürecek
 					rv = False
-				env.curdir = curdir
+				else:
+					# eğer recursive lslerden herhangi biri 
+					# false döndürürse biz de false döndüreceğiz
+					if _ls(env, argv, __dir=target_object) == False:
+						rv = False
 
-			# son satırda ek boşluk bırakmasın diye
-			if i + 1 != len(targets): print()
-		return rv
+				# son satırda ek boşluk bırakmasın ama 
+				# onun dışında aradaboşluk bıraksın
+				if i + 1 != len(targets): print()
+			# target varsa recursionla her şeyi hallettik,
+			# artık çıkabiliriz
+			return rv
+		# eğer sadece ls girildiyse, target 
+		# olmuyor ve recursion da olmuyor
+		# ve işleme direkt bu fonksiyondan devam ediyoruz
+		__dir = env.curdir
 
+	### Recursionın çağırdığı alt kısım, yazdırma işlemi
 
 	## Başlangıç
 	# eğer tüm dosta ve klasörleri
-	# recursive bir şekilde okumak istesek
+	# recursive bir şekilde yazdırmak istesek
 	if "r" in options: 
-		output = ls_recursive(env.curdir)
+		output = ls_recursive(__dir)
 	else: 
-		output = [colorize_element(e) for e in env.curdir.sub_elements]
+		output = [colorize_element(e) for e in __dir.sub_elements]
 	
 	## Düzenleme
+	# r opsiyonu a opsiyonuna göre öncelikli ve ikisi birbiriyle çakışıyor.
 	# eğer hepsi okunmak isteniyorsa (ve "r" yoksa). ve .. da gösteriliyor
 	if "a" in options and "r" not in options:
 		output = [colorize_element("."), colorize_element("..")] + output
@@ -182,28 +194,27 @@ def _rm(env, argv):
 		target_object = env.get_from_path(target)
 
 		if target_object == False:
-			print(f"No such file or directory: {target}")
+			print(f"{glb.fail} {argv[0]}: no such file or directory: {target}")
 			rv = False
 		else:
 			target_path = env.get_path(target)		
 			if target_path in current_path:
-				print("Trying to delete a parent directory to current one.")
+				print("{glb.fail} {argv[0]}: trying to delete a parent directory to current one.")
 				rv = False
 			else:
 				_type = "Subject" if type(target_object) == Subject else "Folder"
-				print(f"remove {_type} {target}? ", end="")
+				print(f"{glb.warn} {argv[0]}: remove {_type} {target}? ", end="")
 				if input() == "y":
 					rm_rv = env.remove(target_object)
-					if rm_rv: print(f"deleted {target_path}")
+					if rm_rv: print(f"{glb.info} {argv[0]}: deleted {target_path}")
 					else: print(rm_rv)
 					
 				else:
-					print(f"canceled.")
+					print(f"{glb.info} {argv[0]}: canceled.")
 
 	if len(targets) == 0:
-		print("rm: missing target")
-		rv = False
-
+		print("{glb.fail} {argv[0]}: missing target")
+		return False
 	return rv
 
 

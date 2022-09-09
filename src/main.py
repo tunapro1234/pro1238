@@ -34,22 +34,14 @@ import readline
 
  
 # DONE
-# "" error parsing
-# üst foldera erişemiyoruz aa
-# cd . && cd ..
-# ls /folder/subject
-# cd to subject check
-# tab tamamlama / koyma
-# environment
-# ls -l
-# ls -lr
-# pwd
 #
 # TODO
+# ls target eklemesi
 # /ty tab complete hatası
 # database için lock oluşturulmalı
 # json düzenlemesi
 #
+# hata sistemini True - False tabanlı yapmamalıydım
 # var olan databasei yok edecek her fonksiyona check konulmalı
 # entry girme fonksiyonları
 #
@@ -134,7 +126,7 @@ class Environment:
 	def remove(self, element):
 		# Root klasördeysek
 		if element.parent == element:
-			print("Cannot delete root folder")
+			print("{glb.fail} cannot delete root folder")
 			return False
 
 		if element.parent.remove_element(element) == False:
