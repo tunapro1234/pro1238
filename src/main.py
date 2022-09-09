@@ -48,15 +48,12 @@ import readline
 # TODO
 # /ty tab complete hatası
 # database için lock oluşturulmalı
+# json düzenlemesi
 #
 # var olan databasei yok edecek her fonksiyona check konulmalı
 # entry girme fonksiyonları
-# DATABASE:
-#	check_properties()
-#	_add_entry fonksiyonları
 #
 # excel export
-# passing sub_elements to functions??
 
 
 class Environment:

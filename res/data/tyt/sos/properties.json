@@ -1,1 +1,1 @@
-{"version": "0.0.0", "name": "sos", "comment": "", "sub_elements": ["tarih.json", "felsefe.json", "din.json"], "data": [{"date": "09/09/22 14:43:33.650387", "subject_name": "sos", "correct": 12, "wrong": 3, "comment": ""}, {"date": "09/09/22 14:55:38.521088", "subject_name": "sos", "correct": 15, "wrong": 0, "comment": ""}, {"date": "09/09/22 15:04:04.542387", "subject_name": "sos", "correct": 0, "wrong": 0, "comment": ""}]}
+{"version": "0.0.0", "name": "sos", "comment": "", "sub_elements": ["tarih.json", "co\u011frafya.json", "felsefe.json", "din.json"], "data": []}
