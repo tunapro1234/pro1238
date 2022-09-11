@@ -6,6 +6,7 @@ json_indent = 4
 keywords_help = {
 		"help": "",
 		"init": "",
+		"fixdb": "",
 		"pwd": "",
 		"cd": "",
 		"ls": "",

@@ -38,8 +38,14 @@ import readline
 # var olan databasei yok edecek her fonksiyona check konulmalı
 #
 # TODO
-# ls /tyt/folder seçeneklerin kısaltılması
+# (internet) ls /tyt/folder seçeneklerin kısaltılması
+# (internet) unittest düzenlemesi
+#
 # database için lock oluşturulmalı
+# versiyon kontrolü
+# fix database fonksiyonu sub_elements düzenlemesi yapacak
+# her prompt çıktığında yapılan check geliştirilmeli 
+#		(database düzeldiğinde tanımıyor)
 #
 # entry fonksiyonları
 # folder/subject oluşturma fonksiyonları

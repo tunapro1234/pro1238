@@ -10,8 +10,10 @@ def _help(*args, **kwargs):
 		print(f"[{key}]: {value}")
 	return True
 
-def _reconfigure(env, *args, **kwargs): 
+
+def _fixdb(env, *args, **kwargs): 
 	raise Exception("not implemented")
+
 
 def _init(env, *args, **kwargs): 
 	# okunmuş database varsa (çok şükür)
@@ -218,7 +220,72 @@ def _mkdir(env, argv):
 
 
 def _mksub(env, argv):
-	raise Exception("not implemented")
+	print(f"{glb.warn} {argv[0]}: implementation not completed")
+	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
+
+	if len(targets) == 0: 
+		raise Exception("missing target.")
+	elif len(targets) > 1:
+		raise Exception("multiple targets not supported")
+
+
+	# eğer uzun bir path girdiysek
+	if "/" in targets[0]:
+		# pathteki son ismi pathten kopar
+		# ve yeni subject ismi yap
+		*target_path, target_name = targets[0].split("/")
+		# argümanı objeye çevir
+		target_parent = env.get_from_path(target_path)
+	else: 
+		target_parent = env.curdir
+		target_name = targets[0]
+
+	try:
+		new_subject = get_subject_data(target_name, target_parent)
+		target_parent.sub_elements.append(new_subject)
+	except KeyboardInterrupt:
+		print()
+		raise Exception("canceled")
+
+	# sıkıntı yoksa yazdır
+	db.write_database(env.root)
+
+
+def get_subject_data(subject_name, parent_folder: Folder):
+	 full_name = input(f"{glb.inpst} subject full name > ")
+	 question_num = ask_subject_data(f"{glb.inpst} subject question num > ", int, 0)
+	 factor = ask_subject_data(f"{glb.inpst} subject factor > ", float, 0)
+	 target = ask_subject_data(f"{glb.inpst} subject target > ", float, 0)
+	 comment = input(f"{glb.inpst} subject comment > ")
+	 return Subject(subject_name, full_name, glb.__version__, 
+			 question_num, factor, target, comment, parent=parent_folder)
+
+
+def ask_subject_data(prompt, _type, pass_default=None, can_be_negative=False):
+	try: 
+		# kullanıcıdan value al
+		value = input(prompt)
+		# eğer fonksiyon istenilen value olmadan da yapabilecekse
+		if pass_default is not None and value == "": 
+			# value yerine default valueyu koy
+			value = pass_default
+		else:
+			# valueyu typea dönüştürmeyi dene
+			# (hata çıkma ihtimali var)
+			value = _type(value)
+
+	# eğer dönüştürme kısmında hata çıkarsa
+	except ValueError:
+		# tekrar dene
+		print(f"{glb.warn} please enter a/an {_type.__name__}")
+		return ask_subject_data(prompt, _type)
+
+	# eğer negatif sayı istenmiyorsa
+	if can_be_negative == False and value < 0:
+		print(f"{glb.warn} cannot be negative")
+		return ask_subject_data(prompt, _type)
+
+	return value
 
 
 def _mkent(env, argv):
@@ -272,7 +339,7 @@ def get_entry_data(target, date=None, publisher=None):
 			if rv == False: 
 				# sadece klasörümüz için data istemeyi dene (coğrafya 
 				# girilmek istenmediğinde sosyal netini sormak gibi)
-				try: correct, wrong = ask_data(target)
+				try: correct, wrong = ask_entry_data(target)
 				except KeyboardInterrupt:
 					raise KeyboardInterrupt
 				except: 
@@ -302,7 +369,7 @@ def get_entry_data(target, date=None, publisher=None):
 
 	elif type(target) == Subject:
 		try:
-			correct, wrong = ask_data(target)
+			correct, wrong = ask_entry_data(target)
 		except KeyboardInterrupt:
 			raise KeyboardInterrupt
 		except: 
@@ -318,23 +385,23 @@ def get_entry_data(target, date=None, publisher=None):
 		raise Exception("malfunction 1")
 
 
-def ask_data(target, state=None):
+def ask_entry_data(target, state=None):
 	if state is None:
 		# doğru ve yanlış sayısını al
-		rv = ask_data(target, 0), ask_data(target, 1)
+		rv = ask_entry_data(target, 0), ask_data(target, 1)
 		# eğer doğru ve yanlış sayısı toplamı toplam 
 		# soru sayısını geçiyorsa baştan dene
 		if sum(rv) > target.question_num:
 			print(f"{glb.warn} total greater than number of questions")
 			print("a little calculation problem i quess?? try that again: ")
-			return ask_data(target)
+			return ask_entry_data(target)
 		# girilen herhangi bir sayı sıfırdan küçükse
 		# (sadece doğru ve yanlış sayısını aldığımız 
 		#	için negatif olma şansı yok)
 		if rv[0] < 0 or rv[1] < 0:
-			print(f"{glb.warn} negative value problem")
+			print(f"{glb.warn} cannot be negative")
 			print(f"best at {target.name} :-/ try that again: ")
-			return ask_data(target)
+			return ask_entry_data(target)
 		return rv
 
 	# eğer state 0 sa doğru sayısını iste 
