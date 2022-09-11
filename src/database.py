@@ -352,6 +352,14 @@ def write_database(main_folder: Folder = default_structure, path = default_path)
 	os.makedirs(path, exist_ok=True)
 	return main_folder.write(path)
 
+def overwrite_database(main_folder: Folder = default_structure, path = default_path):
+	try:
+		# databasei temizle işte
+		os.system(f"rm -rf --preserve-root {path}")
+		os.mkdir(path)
+	except:
+		raise Exception("error deleting old database")
+	return write_database(main_folder, path)
 
 def is_database_changed(root, path = default_path):
 	# check fonksiyonu olduğu için hata döndürmüyor

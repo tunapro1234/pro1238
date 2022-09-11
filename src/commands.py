@@ -24,10 +24,10 @@ def _init(env, *args, **kwargs):
 	#	ve klasörün içinde herhangi bir dosya varsa
 	elif db.default_path.exists() and \
 			len(os.listdir(db.default_path)) != 0:
-		print(f"{glb.warn} this will overwrite the files in {db.deafult_path.name}")
+		print(f"{glb.warn} this will overwrite the files in {db.default_path.name}")
 		if input(f"{glb.inpst} continue? ") != "y": return 
 
-	db.write_database()
+	db.overwrite_database(db.default_structure)
 	print(f"{glb.ok} database created successfully")
 
 	# Yeni databasei environmenta yaz
@@ -245,7 +245,7 @@ def make_object(_type, env, argv):
 			# ama yaratmıyor çünkü aşağıda bize verilen targetın 
 			# / ile başlayıp başlamadığını kontrol ettik
 			target_path = ""
-			target_name = targets[0]
+			target_name = splitted[0]
 
 		# sadece / girilirse mesela
 		else: raise Exception("missing target")
@@ -441,7 +441,7 @@ def get_entry_data(target, date=None, publisher=None):
 def ask_entry_data(target, state=None):
 	if state is None:
 		# doğru ve yanlış sayısını al
-		rv = ask_entry_data(target, 0), ask_data(target, 1)
+		rv = ask_entry_data(target, 0), ask_entry_data(target, 1)
 		# eğer doğru ve yanlış sayısı toplamı toplam 
 		# soru sayısını geçiyorsa baştan dene
 		if sum(rv) > target.question_num:

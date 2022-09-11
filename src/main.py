@@ -36,6 +36,10 @@ import readline
 # DONE
 # /ty tab complete hatası
 # var olan databasei yok edecek her fonksiyona check konulmalı
+# mkdir /a hatası
+# her prompt çıktığında yapılan check geliştirilmeli 
+#		(database düzeldiğinde tanımıyor)
+# folder/subject oluşturma fonksiyonları
 #
 # TODO
 # (internet) ls /tyt/folder seçeneklerin kısaltılması
@@ -43,12 +47,8 @@ import readline
 #
 # database için lock oluşturulmalı
 # versiyon kontrolü
-# fix database fonksiyonu sub_elements düzenlemesi yapacak
-# her prompt çıktığında yapılan check geliştirilmeli 
-#		(database düzeldiğinde tanımıyor)
-#
-# entry fonksiyonları
-# folder/subject oluşturma fonksiyonları
+# fix database fonksiyonu (sub_elements düzenlemesi yapacak)
+# re fonksiyonu
 #
 # excel export
 
@@ -284,7 +284,7 @@ def database_checker(env):
 				# eğer değişim istenen bir şey değilse
 				# env.root içinde kayıtlı olan databasei geri getir
 				if input(f"{glb.inpst} revert database back to normal? ") == "y":
-					db.write_database(env.root)
+					db.overwrite_database(env.root)
 				else:
 					env.reset(None)
 
@@ -319,7 +319,7 @@ def database_checker(env):
 				# eğer değişim istenen bir şey değilse
 				# env.root içinde kayıtlı olan databasei geri getir
 				if input(f"{glb.inpst} revert database back to normal? ") == "y":
-					db.write_database(env.root)
+					db.overwrite_database(env.root)
 			
 				# eğer elimizdeki databasei kullanmayacaksak 
 				# ve değişmiş database uygunsa
