@@ -62,6 +62,10 @@ class Environment:
 
 		self.root = root
 		self.curdir = curdir
+	
+		# database üzerinde bu program dışında 
+		# oynama yapılırsa kullanılacak değişken
+		self.changed_db = None
 
 
 	def reset(self, new_database):
@@ -70,6 +74,11 @@ class Environment:
 
 		self.root = new_database
 		self.curdir = self.root
+
+		# database_checker fonksiyonundaki 
+		# notta buranın sebebi yazıyor
+		if new_database is not None:
+			self.changed_db = None
 
 	@property
 	def curdir(self):
@@ -254,6 +263,77 @@ def completer_wrapper(env):
 	return completer
 	
 
+def database_checker(env):
+	comparing_db = env.root if env.changed_db is None else env.changed_db
+
+	# eğer databasede değişiklik olduysa
+	if db.is_database_changed(comparing_db):
+
+		try: 
+			# yeni databasei yüklemeyi dene
+			# (değişiklikler databasei bozmuş olabilir)
+			new_database = db.read_database()
+	
+		# eğer database bozulmuşsa
+		except:
+			print(f"{glb.warn} database lost")
+		
+			# elimizde bir database varsa onu geri 
+			# getirmek isteyip istemediğimizi öğren
+			if env.root is not None:
+				# eğer değişim istenen bir şey değilse
+				# env.root içinde kayıtlı olan databasei geri getir
+				if input(f"{glb.inpst} revert database back to normal? ") == "y":
+					db.write_database(env.root)
+				else:
+					env.reset(None)
+
+		else: 
+			# ufak bir not geçmek istiyorum
+			#
+			# eğer elimizde bir database varken database 
+			# değitirilirse ve biz değiştirilen/yeni databasei 
+			# okumak istemezsek, program değiştirilmiş/yeni databasei 
+			# env.changed_dbye kaydediyor ki değiştirlmiş/yeni 
+			# databasein bir daha değişip değişmediğini görebilelim
+			#
+			# daha sonrasında database 2. kez değiştiğinde program 
+			# tekrar soruyor yani.
+			# Hatta her değiştiğinde soruyor
+			# eğer tekrar soruşların herhangi birinde kullanıcı 
+			#
+			# değiştirilmiş/yeni databasei kullanmak isterse 
+			# env.reset atılıyor.
+			# çok da beklenmedik değil zaten
+			#
+			# o yüzden env.reset atarken yeni bi database varsa 
+			# (None verilmediyse) changed_db değişkenindeki değer 
+			# bırakılıyor.
+
+			print(f"{glb.warn} database has been changed")
+
+			if input(f"{glb.inpst} use the new database? ") == "y":
+				env.reset(new_database)
+
+			else: 
+				# eğer değişim istenen bir şey değilse
+				# env.root içinde kayıtlı olan databasei geri getir
+				if input(f"{glb.inpst} revert database back to normal? ") == "y":
+					db.write_database(env.root)
+			
+				# eğer elimizdeki databasei kullanmayacaksak 
+				# ve değişmiş database uygunsa
+				else:
+					# yeni değişmiş databasei bu değişkene yükle
+					env.changed_db = new_database
+					# eğer database tekrar değiştirilirse tekrar 
+					# sormak için kaydediyoruz
+
+					# ve programın kullanacağı databasei sıfırla
+					env.reset(None)
+
+
+
 def _main():
 	# otomatik tamamlama için temel readline komutları
 	# tab completion olcak
@@ -274,11 +354,9 @@ def _main():
 	env = Environment(root=database)
 
 	while True:
-		# databasete istenmeyen bir değişiklik 
-		# olduysa değişikliğe ayak uydur
-		if db.is_database_changed(env.root):
-			print(f"{glb.warn} database lost")
-			env.reset(None)
+		# databasete beklenmeyen bir 
+		# değişiklik olursa ayak uydur
+		database_checker(env)
 					
 		# completer fonksiyonu ayarla
 		readline.set_completer(completer_wrapper(env))
