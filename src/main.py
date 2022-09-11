@@ -40,16 +40,17 @@ import readline
 # her prompt çıktığında yapılan check geliştirilmeli 
 #		(database düzeldiğinde tanımıyor)
 # folder/subject oluşturma fonksiyonları
-#
+# re fonksiyonu
+# 
 # TODO
 # (internet) ls /tyt/folder seçeneklerin kısaltılması
 # (internet) unittest düzenlemesi
-#
+# 
+# geçmiş (bash_history tarzında)
 # database için lock oluşturulmalı
 # versiyon kontrolü
 # fix database fonksiyonu (sub_elements düzenlemesi yapacak)
-# re fonksiyonu
-#
+# 
 # excel export
 
 

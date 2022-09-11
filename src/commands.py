@@ -234,7 +234,62 @@ def _rm(env, argv):
 
 
 def _re(env, argv):
-	raise Exception("not implemented")
+	""" bir subject ya da folder için içindeki entryi sil """
+
+	print(f"{glb.warn} {argv[0]} implementation not completed")
+	# klasik hedef belirleme
+	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
+
+	if len(targets) == 0: 
+		raise Exception("missing target")
+	elif len(targets) > 1:
+		raise Exception("multiple targets not supported")
+
+	target = env.get_from_path(targets[0])
+	# data yoksa boşuna boşluk bırakma
+	if len(target.data) == 0: print(f"{glb.info} no data found on {targets[0]}")
+
+	# tek bir data olduğu için ask_re_data gibi 
+	# bir fonksiyon yapma ihtiyacı duymadım
+	while True:
+		# doğru bir girdi alana kadar tekrar et
+		index = input(f"{glb.inpst} index of entry > ")
+		if not index.isnumeric():
+			print(f"{glb.fail} please enter an int")
+		# negatif input da alıyoruz (sondan silmeyi kolaylaştırmak için)
+		elif not (-len(target.data) <= int(index) < len(target.data)):
+			print(f"{glb.warn} must be within -{len(target.data)}..{len(target.data)-1}")
+		# hata yoksa döngüden çık
+		else: break
+	# index hala string onu hallet
+	index = int(index)
+	if type(target) == Folder:
+		# ah, şimdi
+		# programa tyt entrysi girdiğimizde program tyt 
+		# datasının yanında derslere özel dataları da klasör 
+		# altındaki subjectlere kaydediyor. Eğer deneme cidden 
+		# kötü geçtiyse alt derslerden de silmek için
+		if input(f"{glb.inpst} delete entry from subjects too? ") == "y":
+			re_recursively(target, target.data[index].date)
+
+	# indexteki elemanı çıkar
+	del target.data[index]
+	# kaydet
+	db.write_database(env.root)
+
+
+def re_recursively(folder, date):
+	# fonksiyon ilk çağrıldığı klasörden datayı silmiyor
+
+	# her bir eleman için
+	for element in folder.sub_elements:
+		# öncelikle datayı şimdi dönen elemandan sil
+		rm_index = db.find_entry(element, date)
+		del element.data[rm_index]
+		
+		# eğer foldersa onun altındaki elemanlardan da sil
+		if type(element) == Folder:
+			re_recursively(element, date)
 
 
 
