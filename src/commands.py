@@ -24,7 +24,7 @@ def _init(env, *args, **kwargs):
 	#	ve klasörün içinde herhangi bir dosya varsa
 	elif db.default_path.exists() and \
 			len(os.listdir(db.default_path)) != 0:
-		print("{glb.warn} this will overwrite the files in {db.deafult_path.name}")
+		print(f"{glb.warn} this will overwrite the files in {db.deafult_path.name}")
 		if input(f"{glb.inpst} continue? ") != "y": return 
 
 	db.write_database()
@@ -134,6 +134,9 @@ def _ls(env, argv=None, __dir=None):
 
 	### Recursionın çağırdığı alt kısım, yazdırma işlemi
 
+	# eğer hiçbir şey yoksa hiç uğraşma
+	if len(__dir.sub_elements) == 0: return
+
 	## Başlangıç
 	# eğer tüm dosta ve klasörleri
 	# recursive bir şekilde yazdırmak istesek
@@ -215,50 +218,100 @@ def _re(env, argv):
 	raise Exception("not implemented")
 
 
-def _mkdir(env, argv):
-	raise Exception("not implemented")
 
-
-def _mksub(env, argv):
+def make_object(_type, env, argv):
 	print(f"{glb.warn} {argv[0]}: implementation not completed")
 	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
-
+	
 	if len(targets) == 0: 
-		raise Exception("missing target.")
+		raise Exception("missing target")
 	elif len(targets) > 1:
 		raise Exception("multiple targets not supported")
-
-
+	
 	# eğer uzun bir path girdiysek
 	if "/" in targets[0]:
-		# pathteki son ismi pathten kopar
-		# ve yeni subject ismi yap
-		*target_path, target_name = targets[0].split("/")
+		# girilen targetı /lardan böl
+		splitted = [i for i in targets[0].split("/") if i != ""]
+		# eğer /tyt gibi bir şey girildiyse filtrelediğimiz 
+		# için splitted = ['tyt'] olacak. Bu yüzden bu check var
+		if len(splitted) > 1:
+			*target_path, target_name = splitted
+			target_path = "/".join(target_path)
+
+		# sadece isim girdiysek ya da /obje_ismi yazdıysak
+		elif len(splitted) == 1: 
+			# burda target path boş stringe eşitleniyor ama 
+			# /obje_ismi yazdıysak boş string problem yaratır
+			# ama yaratmıyor çünkü aşağıda bize verilen targetın 
+			# / ile başlayıp başlamadığını kontrol ettik
+			target_path = ""
+			target_name = targets[0]
+
+		# sadece / girilirse mesela
+		else: raise Exception("missing target")
+
+	
+		# eğer bize verilen argüman / ile başlıyorsa en 
+		# baştaki / yukarıdaki list comprehensionda yok olacak
+		# onu geri koy
+		if targets[0].startswith("/"):
+			target_path = "/" + target_path
+	
 		# argümanı objeye çevir
 		target_parent = env.get_from_path(target_path)
+	
 	else: 
 		target_parent = env.curdir
 		target_name = targets[0]
-
+	
 	try:
-		new_subject = get_subject_data(target_name, target_parent)
-		target_parent.sub_elements.append(new_subject)
+		# eğer bu fonksiyonu Subject için kullanıyorsak
+		if _type == Subject:
+			# obje datasını Subjecte göre al
+			new_object = get_subject_data(target_name, target_parent)
+		# folder için kullanıyosak
+		elif _type == Folder:
+			# Folder için data al
+			new_object = get_folder_data(target_name, target_parent)
+		# problem
+		else: raise Exception("malfunction 3")
+	
+		# yeni objeyi içinde bulunduğumuz klasöre ekle
+		target_parent.sub_elements.append(new_object)
+	
 	except KeyboardInterrupt:
 		print()
 		raise Exception("canceled")
-
+	
 	# sıkıntı yoksa yazdır
 	db.write_database(env.root)
 
 
+
+def _mkdir(*args, **kwargs):
+	make_object(Folder, *args, **kwargs)
+
+
+def get_folder_data(folder_name, parent_folder: Folder):
+	# eh evet alınacak çok data yok
+	comment = input(f"{glb.inpst} folder comment > ")
+	return Folder(folder_name, glb.__version__, [], 
+			comment, [], parent=parent_folder)
+
+
+def _mksub(*args, **kwargs):
+	make_object(Subject, *args, **kwargs)
+
+
 def get_subject_data(subject_name, parent_folder: Folder):
-	 full_name = input(f"{glb.inpst} subject full name > ")
-	 question_num = ask_subject_data(f"{glb.inpst} subject question num > ", int, 0)
-	 factor = ask_subject_data(f"{glb.inpst} subject factor > ", float, 0)
-	 target = ask_subject_data(f"{glb.inpst} subject target > ", float, 0)
-	 comment = input(f"{glb.inpst} subject comment > ")
-	 return Subject(subject_name, full_name, glb.__version__, 
-			 question_num, factor, target, comment, parent=parent_folder)
+	# kullnıcıdan data iste işte
+	full_name = input(f"{glb.inpst} subject full name > ")
+	question_num = ask_subject_data(f"{glb.inpst} subject question num > ", int, 0)
+	factor = ask_subject_data(f"{glb.inpst} subject factor > ", float, 0)
+	target = ask_subject_data(f"{glb.inpst} subject target > ", float, 0)
+	comment = input(f"{glb.inpst} subject comment > ")
+	return Subject(subject_name, full_name, glb.__version__, 
+		 question_num, factor, target, comment, parent=parent_folder)
 
 
 def ask_subject_data(prompt, _type, pass_default=None, can_be_negative=False):
