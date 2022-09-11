@@ -34,19 +34,13 @@ import readline
 
  
 # DONE
-# /ty tab complete hatası
-# var olan databasei yok edecek her fonksiyona check konulmalı
-# mkdir /a hatası
-# her prompt çıktığında yapılan check geliştirilmeli 
-#		(database düzeldiğinde tanımıyor)
-# folder/subject oluşturma fonksiyonları
 # re fonksiyonu
+# geçmiş (bash_history tarzında)
 # 
 # TODO
 # (internet) ls /tyt/folder seçeneklerin kısaltılması
 # (internet) unittest düzenlemesi
 # 
-# geçmiş (bash_history tarzında)
 # database için lock oluşturulmalı
 # versiyon kontrolü
 # fix database fonksiyonu (sub_elements düzenlemesi yapacak)
@@ -64,6 +58,7 @@ class Environment:
 		self.root = root
 		self.curdir = curdir
 	
+		self.history = []
 		# database üzerinde bu program dışında 
 		# oynama yapılırsa kullanılacak değişken
 		self.changed_db = None
@@ -157,15 +152,52 @@ def parser(env, input_text):
 			parser(env, command)
 		return
 
+	# eğer "" girilirse boşver
+	if input_text.strip() == "": return
+
+	
+	# ünlemli geçmişli yer
+	if "!" in input_text and len(env.history) != 0:
+		# ünlem ile başlayanları ayır
+		ex_words = [i for i in input_text.split(" ") if i.startswith("!")] 
+		# eğer ünlemle başlayan kelime varsa
+		if len(ex_words) > 0:
+			# her bir ünlemle başlayan kelime için
+			for word in ex_words:
+				# !-1 !2 gibi ünlemden sonra numara 
+				# gelip gelmediğini kontrol et
+				if word[1:].isnumeric():
+					# ünlemden sonraki sayıyı al
+					h_index = int(word[1:])
+					# eğer sayı sınırlar içindeyse
+					if -len(env.history) <= h_index < len(env.history):
+						# !sayı gördüğün yere geçmişteki sayıncı elemanı yapıştır
+						input_text = input_text.replace(word, env.history[h_index])
+
+				# !! girdiysek
+				elif word[1:] == "!":
+					input_text = input_text.replace("!!", env.history[-1])
+
+				# !* girdiysek
+				elif word[1:] == "*":
+					# argümanları kopar
+					last_arguments = [i for i in env.history[-1].split(" ") if i != ""]
+					if len(last_arguments) > 0:
+						input_text = input_text.replace("!*", " ".join(last_arguments[1:]))
+
+		# bi yazdıralım
+		print(input_text)
+
+	
 	# boşluklardan böl argüman olarak yedir
 	argv = [i for i in input_text.split(" ") if i != ""]
-
-	# eğer "" girilirse boşver
-	if len(argv) == 0: return
-
+	
+	# en son girilen komutu kaydet
+	env.history.append(input_text)
+	
 	# Eğer çalıştırılmaya çalışılan fonksiyon bizim 
 	# yazdığımız fonksiyonlardan değilse kabul etme
-	elif argv[0] not in glb.keywords:
+	if argv[0] not in glb.keywords:
 		return print(f"{glb.fail} command not found: {input_text}")
 	
 	# database yoksa ve databasee ihtiyacı 
