@@ -6,16 +6,22 @@ import os
 
 
 def _help(*args, **kwargs):
+	""" res/globals dosyasındaki keywordleri ve açıklamalarını yazdır """
 	for key, value in glb.keywords_help.items():
 		print(f"[{key}]: {value}")
 	return True
 
 
 def _fixdb(env, *args, **kwargs): 
+	""" database üzerine dışarıdan yapılan 
+	düzenlemelerden kaynaklanan hataları gider """
 	raise Exception("not implemented")
 
 
 def _init(env, *args, **kwargs): 
+	""" yeni database oluştur ya da eskisinin üzerine 
+	(db.default_structure templateinde yenisini) yaz """
+	
 	# okunmuş database varsa (çok şükür)
 	if env.root is not None:
 		print(f"{glb.warn} this will overwrite current database")
@@ -26,19 +32,21 @@ def _init(env, *args, **kwargs):
 			len(os.listdir(db.default_path)) != 0:
 		print(f"{glb.warn} this will overwrite the files in {db.default_path.name}")
 		if input(f"{glb.inpst} continue? ") != "y": return 
-
+	
 	db.overwrite_database(db.default_structure)
 	print(f"{glb.ok} database created successfully")
-
+	
 	# Yeni databasei environmenta yaz
 	env.reset(db.read_database())
 
 
 def _pwd(env, *args, **kwargs):
+	""" içinde bulunduğumuz klasörü ekrana yazdır """
 	print(env.get_path(env.curdir))
 
 
 def _cd(env, argv):
+	""" klasör değiştir """
 	argv = [] if argv is None else argv
 	d_arguments = [i for i in argv if i.startswith("-") and i != "-"]
 
@@ -61,6 +69,7 @@ def _cd(env, argv):
 
 
 def ls_recursive(target: Folder, tab=" "):
+	""" ls fonksiyonunun -r özelliğini yerine getir """
 	# belirli bşr klasör altındaki tüm klasörleri görmemizi sağlıyor
 	# öncelikle bulunduğumuz klasörün ismi
 	output = [colorize_element(target)]
@@ -76,8 +85,9 @@ def ls_recursive(target: Folder, tab=" "):
 			output.append(tab + colorize_element(element))
 	return output
 
+
 def colorize_element(element):
-	# verilen elemana göre renklendirme
+	""" ls için verilen elemana göre renklendirme """
 	if type(element) == Folder:
 		return glb.colorize(element.name, glb.folder_color)
 	elif type(element) == Subject:
@@ -86,7 +96,9 @@ def colorize_element(element):
 		return glb.colorize(element, glb.folder_color)
 	else: raise Exception
 
+
 def _ls(env, argv=None, __dir=None):
+	""" klasör içindeki elemanları yazdır """
 	# klasik default argüman şeyleri
 	argv = [] if argv is None else argv
 	d_arguments = [i for i in argv if i.startswith("-")]
@@ -165,7 +177,10 @@ def _ls(env, argv=None, __dir=None):
 
 
 def _le(env, argv):
+	""" bir subject ya da folder için içindeki entryleri göster """
+
 	print(f"{glb.warn} {argv[0]} implementation not completed")
+	# klasik hedef belirleme
 	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
 
 	if len(targets) == 0: 
@@ -184,30 +199,34 @@ def _le(env, argv):
 
 
 def _rm(env, argv):
-	argv = [] if argv is None else argv
+	""" bir subject ya da folderı sil """
+	# - ile başlayan argümanlar özel işleniyor
 	d_arguments = [i for i in argv if i.startswith("-")]
+	# -- ile başlayanlar ve - ile başlayanlar d_argumentsta 
+	# birbirine karışıyor o yüzden bi de bu var
 	options = "".join(d_arguments).replace("-", "")
 
+	# içinde bulunduğumuz pathin string hali
 	current_path = env.get_path(env.curdir)
+	# target belirle
 	targets = [i for i in argv if not i.startswith("-") and i != argv[0]]
+	# her bir target için
 	for target in targets:
-		try:
-			target_object = env.get_from_path(target)
+		target_object = env.get_from_path(target)
 
-			target_path = env.get_path(target)		
-			if target_path in current_path:
-				raise Exception("trying to delete a parent directory to current one")
-			else:
-				_type = "Subject" if type(target_object) == Subject else "Folder"
-				if input(f"{glb.inpst} {argv[0]}: remove {_type} {target}? ") == "y":
-					env.remove(target_object)
-					print(f"{glb.ok} {argv[0]}: deleted {target_path}")
-				else:
-					print(f"{glb.info} {argv[0]}: canceled")
-
-		except Exception as e:
-			##!##
-			print(f"{glb.fail} {argv[0]}: {e}")
+		# silmek istediğimiz hedefin string halinde pathi
+		target_path = env.get_path(target)
+		# eğer silmek istediğimiz klasör bizim 
+		# üst klasörlerimizden biriyse hata ver
+		if target_path in current_path:
+			raise Exception("trying to delete a parent directory to current one")
+	
+		# silmek istediğine emin misin
+		if input(f"{glb.inpst} {argv[0]}: remove {type(target_object).__name__} {target}? ") == "y":
+			env.remove(target_object)
+			print(f"{glb.ok} {argv[0]}: deleted {target_path}")
+		else:
+			print(f"{glb.info} {argv[0]}: canceled")
 
 	if len(targets) == 0:
 		raise Exception("missing target")
